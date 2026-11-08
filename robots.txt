@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://piyush-pathak-3004.github.io/sip-calculator/sitemap.xml

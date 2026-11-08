@@ -79,7 +79,6 @@ test('Step-Up SIP Calculator: Backward Compatibility & Regression Suite', async 
   });
 
   await t.test('3. Legacy Parameter Aliasing (Ensures older API calls & URL parameters continue working)', () => {
-    // Calling with legacy snake_case and abbreviated parameter names
     const legacyResult = SipCalculator.calculate({
       lump_sum: 50000,
       sip: 8000,
@@ -99,13 +98,11 @@ test('Step-Up SIP Calculator: Backward Compatibility & Regression Suite', async 
   });
 
   await t.test('4. Graceful Input Fallbacks (Strings, empty objects, invalid types)', () => {
-    // Empty config should gracefully apply defaults
     const defaultResult = SipCalculator.calculate({});
     assert.strictEqual(defaultResult.schedule.length, SipCalculator.DEFAULTS.years);
     assert.strictEqual(defaultResult.config.lumpsum, SipCalculator.DEFAULTS.lumpsum);
     assert.strictEqual(defaultResult.config.monthlySip, SipCalculator.DEFAULTS.monthlySip);
 
-    // Numeric strings should parse cleanly
     const stringResult = SipCalculator.calculate({
       lumpsum: '200000',
       monthlySip: '15000',
@@ -148,6 +145,45 @@ test('Step-Up SIP Calculator: Backward Compatibility & Regression Suite', async 
 
     const expectedHeader = 'Year,Monthly_SIP,Yearly_SIP_Contribution,Cumulative_Invested,Yearly_Returns,Total_Gains,Year_End_Corpus';
     assert.strictEqual(lines[0], expectedHeader, 'CSV header structure must be strictly preserved');
+  });
+
+  await t.test('7. Additive Feature: 10-Year SIP + 10-Year Wait (Coast FIRE) Total Wealth at 20 Years', () => {
+    const result = SipCalculator.calculate({
+      lumpsum: 100000,
+      monthlySip: 10000,
+      stepUpType: 'percent',
+      stepUpValue: 10,
+      compoundStepUp: true,
+      returnRate: 12.0,
+      years: 10,
+      waitYears: 10
+    });
+
+    assert.strictEqual(result.schedule.length, 20, 'Total schedule must be 20 years (10 SIP + 10 Wait)');
+    // During wait phase (Years 11-20), monthly_sip must be 0 and cumulative_invested must remain equal to Year 10
+    const year10 = result.schedule[9];
+    const year20 = result.schedule[19];
+
+    assert.strictEqual(year20.monthly_sip, 0, 'Year 20 monthly SIP must be 0 during wait phase');
+    assert.strictEqual(year20.cumulative_invested, year10.cumulative_invested, 'No additional principal invested during wait phase');
+    assert(year20.year_end_corpus > year10.year_end_corpus * 3, '10 years of compounding at 12% must more than triple the Year 10 corpus');
+  });
+
+  await t.test('8. Additive Feature: Realistic Inflation-Adjusted SWP Calculator', () => {
+    const swp = SipCalculator.calculateInflationAdjustedSwp({
+      currentMonthlyExpense: 50000,
+      inflationRate: 6.0,
+      yearsUntilSwp: 20,
+      accumulatedCorpus: 30000000,
+      swpReturnRate: 8.5,
+      swpDurationYears: 25
+    });
+
+    // Future monthly expense after 20 years at 6% inflation: 50000 * (1.06)^20 = 160,356.77
+    const expectedFirstYearSwp = 50000 * Math.pow(1.06, 20);
+    assert(Math.abs(swp.summary.startingMonthlySwp - expectedFirstYearSwp) < 0.01);
+    assert.strictEqual(swp.schedule.length, 25);
+    assert(swp.schedule[1].monthly_withdrawal > swp.schedule[0].monthly_withdrawal, 'SWP monthly withdrawal must step up with inflation each year');
   });
 
 });

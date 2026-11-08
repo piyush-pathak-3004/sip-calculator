@@ -3,7 +3,64 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Step-Up SIP & Lumpsum Calculator | Production Web App</title>
+  <title>Step-Up SIP Calculator, SIP + Wait (Coast FIRE) & Inflation-Adjusted SWP Planner</title>
+  <meta name="description" content="Free Step-Up SIP Calculator with Lumpsum, 10-Year SIP + 10-Year Wait (Coast FIRE) simulator, and Realistic Inflation-Adjusted SWP Retirement Calculator with year-by-year schedules.">
+  <meta name="keywords" content="step up sip calculator, sip calculator with step up and lumpsum, inflation adjusted swp calculator, 10 year sip 10 year wait calculator, mutual fund step up calculator, systematic withdrawal plan with inflation">
+  <meta name="robots" content="index, follow">
+  <meta property="og:title" content="Step-Up SIP, Coast FIRE & Inflation-Adjusted SWP Calculator">
+  <meta property="og:description" content="Calculate expected mutual fund wealth with annual step-up SIP, lumpsum compounding, 10Y SIP + 10Y Wait, and realistic inflation-indexed SWP withdrawals.">
+  <meta property="og:type" content="website">
+
+  <!-- Structured Data (JSON-LD) for Google Search Top-3 Rich Snippets -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Step-Up SIP & Inflation-Adjusted SWP Wealth Planner",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "INR"
+        },
+        "description": "Interactive mutual fund calculator supporting Step-Up SIP (percentage or fixed amount), Lumpsum compounding, SIP + Wait (Coast FIRE) compounding, and Inflation-Adjusted Systematic Withdrawal Plan (SWP)."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How does a Step-Up SIP Calculator with Lumpsum work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A Step-Up SIP with Lumpsum calculator combines an initial one-time investment (Day 1 Lumpsum) with a monthly Systematic Investment Plan (SIP) that automatically increases every year by a chosen percentage (e.g., 10% annually) or fixed amount (e.g., ₹1,000 annually)."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What happens if I do a 10-year SIP and then wait 10 years without contributing?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "When you invest via SIP for 10 years and stop new monthly contributions for the next 10 years (known as Coast FIRE or SIP + Wait), your accumulated Year-10 corpus continues compounding every month. At 12% p.a., your corpus more than triples during the 10-year waiting period without adding a single extra rupee."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why should an SWP calculator account for inflation?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A realistic SWP (Systematic Withdrawal Plan) calculator must account for inflation both before and during retirement. If your current monthly expense is ₹50,000 and inflation is 6%, in 20 years you will need ₹1,60,357 per month just to maintain the same lifestyle, and your withdrawals must continue increasing by 6% every subsequent year."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <!-- Chart.js -->
@@ -45,15 +102,16 @@
     }
   </script>
   <style>
-    /* Custom scrollbar */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     .table-container { max-height: 480px; }
-    /* Smooth transition */
     * { transition: background-color 0.15s ease, border-color 0.15s ease; }
     input[type=range] { accent-color: #059669; }
+    /* Reserve exact dimensions on ad slots to guarantee 0.00 CLS for Google Core Web Vitals */
+    .ad-slot-banner { min-height: 64px; }
+    .ad-slot-card { min-height: 110px; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
@@ -61,9 +119,25 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-  <!-- Header -->
+  <!-- Legal / Publisher Compliance Modal -->
+  <div id="legal-modal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col border border-slate-200 shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <h3 id="legal-modal-title" class="text-base font-bold text-slate-900">Publisher Information</h3>
+        <button type="button" id="btn-close-modal" class="text-slate-400 hover:text-slate-700 p-1 rounded-lg">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <div id="legal-modal-body" class="p-6 overflow-y-auto text-xs text-slate-600 space-y-3 leading-relaxed">
+      </div>
+    </div>
+  </div>
+
+  <!-- Header & Multi-Page Navigation -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,18 +146,48 @@
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Step-Up SIP & Lumpsum Calculator</h1>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-brand-100 text-brand-800 border border-brand-200">Production Web App</span>
+            <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">Step-Up SIP &amp; SWP Wealth Suite</h1>
+            <span class="hidden md:inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-brand-100 text-brand-800 border border-brand-200">Pro</span>
+            <span class="sr-only">Production Web App</span>
           </div>
-          <p class="text-xs text-slate-500 hidden sm:block">Model lumpsum compounding, monthly SIP increments, and year-by-year expected corpus</p>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Complete SIP Step-Up, 10Y SIP + 10Y Wait &amp; Inflation-Adjusted SWP Calculators</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2.5">
+      <!-- Primary Page Navigation Tabs -->
+      <nav aria-label="Calculator Pages" class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold order-3 lg:order-2 w-full lg:w-auto justify-center">
+        <button type="button" id="nav-sip-page" class="flex-1 lg:flex-initial px-3 py-1.5 rounded-lg bg-white text-brand-700 shadow-xs transition flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+          <span>1. Step-Up SIP &amp; Wait</span>
+        </button>
+        <button type="button" id="nav-swp-page" class="flex-1 lg:flex-initial px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>2. Realistic Inflation SWP</span>
+        </button>
+        <button type="button" id="nav-seo-page" class="flex-1 lg:flex-initial px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+          <span>3. Guides &amp; ₹10k/mo Blueprint</span>
+        </button>
+      </nav>
+
+      <!-- Global Toolbar Actions -->
+      <div class="flex items-center gap-2 order-2 lg:order-3">
+        <!-- Ad Preview Mode Toggle -->
+        <label class="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-slate-100 px-2.5 py-1.5 rounded-lg border border-slate-200 cursor-pointer" title="Toggle non-intrusive ad slot preview">
+          <input type="checkbox" id="toggle-ad-preview" class="rounded text-brand-600 focus:ring-0" checked>
+          <span>Smooth Ads</span>
+        </label>
+
         <!-- Currency Selector -->
         <div class="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 text-xs font-medium">
           <label for="currency-select" class="sr-only">Select Currency</label>
-          <select id="currency-select" class="bg-transparent py-1.5 px-2.5 text-slate-700 font-semibold focus:outline-none cursor-pointer">
+          <select id="currency-select" class="bg-transparent py-1 px-2 text-slate-700 font-semibold focus:outline-none cursor-pointer">
             <option value="INR" selected>₹ INR (Lakh/Cr)</option>
             <option value="USD">$ USD ($/M)</option>
             <option value="EUR">€ EUR (€/M)</option>
@@ -92,427 +196,839 @@
         </div>
 
         <!-- Copy Shareable Link Button -->
-        <button id="btn-share-link" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition">
+        <button id="btn-share-link" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-xs transition">
           <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
           </svg>
-          Share Plan
+          <span class="hidden sm:inline">Share Plan</span>
         </button>
 
         <!-- Reset Button -->
-        <button id="btn-reset" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition">
+        <button id="btn-reset" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-xs transition">
           <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
-          Reset
+          <span class="hidden sm:inline">Reset</span>
         </button>
 
         <!-- Export CSV Button -->
-        <button id="btn-export-csv" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/30 transition">
+        <button id="btn-export-csv" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-xs transition">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
-          Export CSV
+          <span class="hidden sm:inline">Export CSV</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Content Layout -->
+  <!-- Main Content Container -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-      <!-- Left Column: Interactive Inputs (5 Columns on Desktop) -->
-      <section class="lg:col-span-5 space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-            <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
-            </svg>
-            Investment Parameters
-          </h2>
-          <span class="text-xs text-slate-400 font-medium">Real-time update</span>
-        </div>
+    <!-- =================================================================== -->
+    <!-- PAGE 1: STEP-UP SIP, LUMPSUM & SIP + WAIT (COAST FIRE) CALCULATOR   -->
+    <!-- =================================================================== -->
+    <div id="page-sip" class="space-y-6">
 
-        <!-- 1. Initial Lumpsum Amount -->
-        <div class="space-y-2">
-          <div class="flex justify-between items-center">
-            <label for="lumpsum-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              Available Lumpsum
-              <span class="text-xs font-normal text-slate-400">(Day 1 investment)</span>
-            </label>
-            <div class="relative w-36">
-              <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
-              <input type="number" id="lumpsum-input" min="0" max="100000000" step="5000" value="100000"
-                class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
-            </div>
-          </div>
-          <input type="range" id="lumpsum-range" min="0" max="2500000" step="10000" value="100000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-          <div class="flex flex-wrap gap-1.5 pt-1">
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="0">₹0</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="50000">₹50K</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="100000">₹1 Lakh</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="500000">₹5 Lakhs</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="1000000">₹10 Lakhs</button>
-          </div>
-        </div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        <!-- 2. Initial Monthly SIP -->
-        <div class="space-y-2 pt-2 border-t border-slate-100">
-          <div class="flex justify-between items-center">
-            <label for="monthly-sip-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              Initial Monthly SIP
-              <span class="text-xs font-normal text-slate-400">(Year 1 monthly)</span>
-            </label>
-            <div class="relative w-36">
-              <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
-              <input type="number" id="monthly-sip-input" min="500" max="1000000" step="500" value="10000"
-                class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
-            </div>
-          </div>
-          <input type="range" id="monthly-sip-range" min="500" max="100000" step="500" value="10000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-          <div class="flex flex-wrap gap-1.5 pt-1">
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="2500">₹2.5K</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="5000">₹5K</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="10000">₹10K</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="25000">₹25K</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="50000">₹50K</button>
-          </div>
-        </div>
-
-        <!-- 3. Annual Step-Up Configuration -->
-        <div class="space-y-3 pt-2 border-t border-slate-100">
-          <div class="flex items-center justify-between">
-            <label class="text-sm font-semibold text-slate-700">Annual Step-Up Frequency</label>
-            <!-- Step-Up Type Toggle -->
-            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
-              <button type="button" id="toggle-stepup-percent" class="px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition">
-                Percentage (%)
-              </button>
-              <button type="button" id="toggle-stepup-value" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
-                Fixed Value (<span class="currency-symbol">₹</span>)
-              </button>
-            </div>
+        <!-- Left Column: Interactive Inputs (5 Columns on Desktop) -->
+        <section class="lg:col-span-5 space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+              <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+              </svg>
+              Investment Parameters
+            </h2>
+            <span class="text-xs text-slate-400 font-medium">Real-time update</span>
           </div>
 
-          <!-- Step-up Value Input & Slider -->
+          <!-- 1. Initial Lumpsum Amount -->
           <div class="space-y-2">
             <div class="flex justify-between items-center">
-              <span id="stepup-label" class="text-xs text-slate-500 font-medium">Increment each year by (%):</span>
+              <label for="lumpsum-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                Available Lumpsum
+                <span class="text-xs font-normal text-slate-400">(Day 1 investment)</span>
+              </label>
               <div class="relative w-36">
-                <span id="stepup-unit-prefix" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs currency-symbol">₹</span>
-                <input type="number" id="stepup-input" min="0" max="100" step="1" value="10"
-                  class="w-full px-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
-                <span id="stepup-unit-suffix" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+                <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+                <input type="number" id="lumpsum-input" min="0" max="100000000" step="5000" value="100000"
+                  class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
               </div>
             </div>
-            <input type="range" id="stepup-range" min="0" max="50" step="1" value="10" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-            <div id="stepup-presets-container" class="flex flex-wrap gap-1.5 pt-1">
-              <!-- Dynamically populated presets -->
+            <input type="range" id="lumpsum-range" min="0" max="2500000" step="10000" value="100000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="0">₹0</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="50000">₹50K</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="100000">₹1 Lakh</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="500000">₹5 Lakhs</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="1000000">₹10 Lakhs</button>
             </div>
           </div>
 
-          <!-- Compound vs Simple Step-Up Toggle -->
-          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80 text-xs space-y-1.5">
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-slate-700">Step-Up Calculation Method:</span>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" id="compound-stepup-toggle" class="sr-only peer" checked>
-                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+          <!-- 2. Initial Monthly SIP -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="monthly-sip-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                Initial Monthly SIP
+                <span class="text-xs font-normal text-slate-400">(Year 1 monthly)</span>
               </label>
+              <div class="relative w-36">
+                <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+                <input type="number" id="monthly-sip-input" min="500" max="1000000" step="500" value="10000"
+                  class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+              </div>
             </div>
-            <p id="stepup-method-desc" class="text-slate-500 text-[11px] leading-relaxed">
-              <strong>Compounding Step-Up:</strong> Each year's SIP increases over the previous year's SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.
+            <input type="range" id="monthly-sip-range" min="500" max="100000" step="500" value="10000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="2500">₹2.5K</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="5000">₹5K</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="10000">₹10K</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="25000">₹25K</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="50000">₹50K</button>
+            </div>
+          </div>
+
+          <!-- 3. Annual Step-Up Configuration -->
+          <div class="space-y-3 pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between">
+              <label class="text-sm font-semibold text-slate-700">Annual Step-Up Frequency</label>
+              <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+                <button type="button" id="toggle-stepup-percent" class="px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition">
+                  Percentage (%)
+                </button>
+                <button type="button" id="toggle-stepup-value" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
+                  Fixed Value (<span class="currency-symbol">₹</span>)
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span id="stepup-label" class="text-xs text-slate-500 font-medium">Increment each year by (%):</span>
+                <div class="relative w-36">
+                  <span id="stepup-unit-prefix" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs currency-symbol">₹</span>
+                  <input type="number" id="stepup-input" min="0" max="100" step="1" value="10"
+                    class="w-full px-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+                  <span id="stepup-unit-suffix" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+                </div>
+              </div>
+              <input type="range" id="stepup-range" min="0" max="50" step="1" value="10" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+              <div id="stepup-presets-container" class="flex flex-wrap gap-1.5 pt-1"></div>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80 text-xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-medium text-slate-700">Step-Up Calculation Method:</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="compound-stepup-toggle" class="sr-only peer" checked>
+                  <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+                </label>
+              </div>
+              <p id="stepup-method-desc" class="text-slate-500 text-[11px] leading-relaxed">
+                <strong>Compounding Step-Up:</strong> Each year's SIP increases over the previous year's SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.
+              </p>
+            </div>
+          </div>
+
+          <!-- 4. Expected Annual Return Rate -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="return-rate-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                Expected Return Rate (p.a.)
+                <span class="text-xs font-normal text-slate-400">(CAGR)</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="return-rate-input" min="1" max="35" step="0.5" value="12"
+                  class="w-full pr-7 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+              </div>
+            </div>
+            <input type="range" id="return-rate-range" min="1" max="25" step="0.5" value="12" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="8">Debt (8%)</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="10">Hybrid (10%)</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="12">Large Cap (12%)</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="15">Mid/Small (15%)</button>
+            </div>
+          </div>
+
+          <!-- 5. Active SIP Duration in Years -->
+          <div class="space-y-2 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="years-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                Active SIP Duration
+                <span class="text-xs font-normal text-slate-400">(Contribution yrs)</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="years-input" min="1" max="40" step="1" value="10"
+                  class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">Yrs</span>
+              </div>
+            </div>
+            <input type="range" id="years-range" min="1" max="35" step="1" value="10" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="5">5 Years</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="10">10 Years</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="15">15 Years</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="20">20 Years</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="25">25 Years</button>
+            </div>
+          </div>
+
+          <!-- 6. NEW: Wait / Coast Period Without SIP (e.g. 10Y SIP + 10Y Wait) -->
+          <div class="space-y-2 pt-3 border-t border-indigo-100 bg-indigo-50/40 -mx-5 sm:-mx-6 px-5 sm:px-6 pb-2 rounded-b-xl">
+            <div class="flex justify-between items-center pt-1">
+              <label for="wait-years-input" class="text-sm font-bold text-indigo-950 flex items-center gap-1.5">
+                <span>Wait Period Without SIP</span>
+                <span class="px-1.5 py-0.5 text-[10px] font-bold bg-indigo-100 text-indigo-700 rounded">Coast FIRE</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="wait-years-input" min="0" max="40" step="1" value="10"
+                  class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-bold text-sm rounded-lg border border-indigo-200 focus:border-accent-500 focus:ring-1 focus:ring-accent-500 bg-white text-indigo-950">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400 font-mono text-xs">Yrs</span>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 leading-normal">
+              Stop new monthly SIPs after <span id="label-sip-years-count" class="font-semibold text-slate-700">10</span> yrs &amp; let the corpus compound untouched for additional years.
+            </p>
+            <input type="range" id="wait-years-range" min="0" max="30" step="1" value="10" class="w-full h-2 bg-indigo-200 rounded-lg cursor-pointer">
+            <div class="flex flex-wrap gap-1.5 pt-1">
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-medium transition" data-target="wait-years-input" data-value="0">0 Yrs (No Wait)</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-medium transition" data-target="wait-years-input" data-value="5">+5 Yrs Wait</button>
+              <button type="button" id="btn-preset-10-10" class="text-[11px] px-2.5 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-xs transition">10Y SIP + 10Y Wait</button>
+              <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-white border border-indigo-200 hover:bg-indigo-100 text-indigo-700 font-medium transition" data-target="wait-years-input" data-value="15">+15 Yrs Wait</button>
+            </div>
+          </div>
+
+          <!-- Transfer Corpus to SWP Button -->
+          <div class="pt-2">
+            <button type="button" id="btn-send-to-swp" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+              <span>Simulate Inflation-Adjusted SWP on This Corpus</span>
+              <svg class="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- Right Column: Results Dashboard, Charts & Breakdown (7 Columns on Desktop) -->
+        <section class="lg:col-span-7 space-y-5">
+
+          <!-- 4 Key Performance Metric Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Total Expected Corpus -->
+            <div class="bg-gradient-to-br from-brand-600 via-brand-700 to-emerald-900 rounded-2xl p-5 text-white shadow-lg shadow-brand-700/20 relative overflow-hidden">
+              <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+              <div class="flex items-center justify-between text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1">
+                <span id="label-maturity-heading">Expected Corpus (Yr 20)</span>
+                <span class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px]">Future Value</span>
+              </div>
+              <div id="metric-corpus" class="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono py-1">₹0</div>
+              <div class="flex items-center justify-between pt-2 border-t border-white/20 text-xs text-brand-100">
+                <span id="metric-corpus-words" class="font-medium text-white/90">Calculating...</span>
+                <span id="metric-multiplier" class="font-bold bg-white text-brand-900 px-2 py-0.5 rounded-md text-[11px]">0.0x Return</span>
+              </div>
+            </div>
+
+            <!-- Total Invested Amount -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                  <span>Total Amount Invested</span>
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                </div>
+                <div id="metric-invested" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+                <span>Lumpsum: <strong id="metric-invested-lumpsum" class="text-slate-800">₹0</strong></span>
+                <span>Total SIPs: <strong id="metric-invested-sips" class="text-slate-800">₹0</strong></span>
+              </div>
+            </div>
+
+            <!-- Estimated Wealth Gain (Interest) -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                  <span>Estimated Wealth Gain</span>
+                  <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                  </svg>
+                </div>
+                <div id="metric-gain" class="text-2xl sm:text-3xl font-extrabold text-brand-600 tracking-tight font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+                <span>Gain Share: <strong id="metric-gain-percent" class="text-brand-600 font-bold">0%</strong></span>
+                <span>of Total Corpus</span>
+              </div>
+            </div>
+
+            <!-- Peak Active Monthly SIP -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                  <span id="label-final-sip-card">Peak Active Monthly SIP</span>
+                  <svg class="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                  </svg>
+                </div>
+                <div id="metric-final-sip" class="text-2xl sm:text-3xl font-extrabold text-accent-600 tracking-tight font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+                <span>Grown from: <strong id="metric-initial-sip" class="text-slate-800">₹10,000</strong></span>
+                <span id="metric-sip-growth-badge" class="text-accent-700 bg-accent-50 font-semibold px-2 py-0.5 rounded text-[11px]">+0%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIP + Wait (10Y SIP + 10Y Wait) Spotlight Card -->
+          <div id="wait-phase-banner" class="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-indigo-950 via-indigo-900 to-slate-900 text-white shadow-md">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="space-y-1 max-w-xl">
+                <div class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-indigo-300">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span id="wait-banner-title">10-Year Active SIP + 10-Year Wait Analysis</span>
+                </div>
+                <p id="wait-banner-desc" class="text-xs text-indigo-100 leading-relaxed">
+                  After 10 years of SIP, your corpus reaches <strong class="text-white">₹37.04 Lakh</strong>. By simply waiting another 10 years with ₹0 new monthly SIP, compounding adds <strong class="text-emerald-300">+₹85.21 Lakh</strong> automatically!
+                </p>
+              </div>
+              <div class="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-2.5 border border-white/15 text-right shrink-0">
+                <span class="text-[10px] text-indigo-200 uppercase font-semibold block">Growth During Wait Phase</span>
+                <span id="wait-banner-gain" class="text-lg font-extrabold text-emerald-300 font-mono">+₹85.21 Lakh</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparative Advantage Banner -->
+          <div id="comparison-banner" class="rounded-2xl p-4 bg-gradient-to-r from-accent-50 to-indigo-50/50 border border-indigo-100 flex items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <div class="w-8 h-8 rounded-xl bg-accent-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-xs font-bold text-slate-900">Step-Up vs Flat SIP Advantage</h3>
+                <p id="comparison-text" class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                  By stepping up your SIP, you accumulate significantly more wealth compared to a fixed monthly SIP.
+                </p>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="text-[10px] text-slate-400 block font-medium uppercase">Extra Wealth</span>
+              <span id="comparison-extra-value" class="text-base font-bold text-accent-700 font-mono">+₹0</span>
+            </div>
+          </div>
+
+          <!-- NON-INTRUSIVE NATIVE SPONSORED SLOT #1 (Zero CLS, Smooth Finance Ad) -->
+          <div class="smooth-ad-unit ad-slot-banner rounded-xl bg-slate-100/80 border border-slate-200/80 px-4 py-2.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <span class="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-slate-200 text-slate-600 rounded">Sponsored</span>
+              <p class="text-xs text-slate-700 font-medium">
+                <strong>Direct Mutual Funds (0% Commission):</strong> Save up to 1.2% extra CAGR annually by investing in zero-commission Direct Index Funds.
+              </p>
+            </div>
+            <a href="#seo-monetization-section" id="link-ad-slot-1" class="shrink-0 text-xs font-bold text-brand-700 hover:text-brand-800 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs transition">
+              Compare Platforms &rarr;
+            </a>
+          </div>
+
+          <!-- Visual Analytics: Charts Section -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                <h3 class="text-sm font-bold text-slate-900">Visual Growth Breakdown</h3>
+              </div>
+              <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+                <button type="button" id="tab-growth-chart" class="px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition">
+                  Growth Trajectory
+                </button>
+                <button type="button" id="tab-doughnut-chart" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
+                  Corpus Distribution
+                </button>
+              </div>
+            </div>
+
+            <div id="container-growth-chart" class="relative h-72 w-full">
+              <canvas id="growthChart"></canvas>
+            </div>
+
+            <div id="container-doughnut-chart" class="hidden relative h-72 w-full flex items-center justify-center">
+              <div class="w-full max-w-xs h-full relative">
+                <canvas id="doughnutChart"></canvas>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-slate-600 border-t border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-slate-400"></span>
+                <span>Cumulative Invested</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-brand-500"></span>
+                <span>Expected Portfolio Corpus</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-sm bg-accent-500"></span>
+                <span>Wealth Gain (Returns)</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <!-- Full Year-by-Year Schedule (Detailed Breakdown Table) -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 sm:px-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-slate-900">Year-by-Year SIP &amp; Wait Schedule</h2>
+              <span id="schedule-years-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 border border-brand-200">20 Years</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Complete breakdown of active monthly SIP, waiting period compounding, and year-end portfolio value</p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="relative w-44">
+              <input type="text" id="table-search" placeholder="Filter year or phase..."
+                class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-brand-500">
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+
+            <button id="btn-export-csv-table" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition">
+              <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+              </svg>
+              Download CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-container overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200 z-10">
+              <tr>
+                <th scope="col" class="py-3 px-4">Year &amp; Phase</th>
+                <th scope="col" class="py-3 px-4 text-right">Monthly SIP</th>
+                <th scope="col" class="py-3 px-4 text-right">Annual Contribution</th>
+                <th scope="col" class="py-3 px-4 text-right">Total Invested</th>
+                <th scope="col" class="py-3 px-4 text-right">Yearly Returns</th>
+                <th scope="col" class="py-3 px-4 text-right">Total Wealth Gain</th>
+                <th scope="col" class="py-3 px-4 text-right text-brand-900 bg-brand-50/70">Year-End Corpus</th>
+              </tr>
+            </thead>
+            <tbody id="schedule-table-body" class="divide-y divide-slate-100 font-mono">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="p-3.5 bg-slate-50 border-t border-slate-200 text-slate-500 text-[11px] flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Compounded monthly at nominal rate divided by 12. During Wait Phase, monthly SIP is ₹0 while full corpus compounds.</span>
+          </div>
+          <span id="table-row-count" class="font-medium">Showing 20 of 20 years</span>
+        </div>
+      </section>
+
+      <!-- Financial Milestone Badges & Insights -->
+      <section class="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+            </svg>
+            Corpus Milestone Timeline
+          </h3>
+          <span class="text-xs text-slate-400">Time to reach target wealth thresholds</span>
+        </div>
+        <div id="milestones-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3"></div>
+      </section>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PAGE 2: REALISTIC INFLATION-ADJUSTED SWP RETIREMENT CALCULATOR      -->
+    <!-- =================================================================== -->
+    <div id="page-swp" class="hidden space-y-6">
+
+      <!-- Intro Banner Explaining Realistic Inflation-Adjusted SWP -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div class="space-y-1 max-w-2xl">
+          <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-brand-500/20 text-brand-300 border border-brand-400/30 rounded">Inflation-Protected Retirement Engine</span>
+          <h2 class="text-lg font-bold">Realistic SWP Calculator (With Pre &amp; Post-Retirement Inflation)</h2>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Most SWP calculators ignore inflation. Enter your <strong>current monthly expense today</strong> and <strong>how many years later you want to start SWP</strong>. We project your exact future monthly expense at retirement and increase withdrawals every year by inflation while your remaining wealth earns returns.
+          </p>
+        </div>
+        <button type="button" id="btn-sync-from-sip" class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-sm transition shrink-0">
+          Pull Corpus from SIP Calculator
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: SWP Inputs -->
+        <section class="lg:col-span-5 space-y-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 class="text-base font-bold text-slate-900 pb-2 border-b border-slate-100">SWP &amp; Living Expense Inputs</h3>
+
+          <!-- 1. Current Monthly Expense Today -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center">
+              <label for="swp-expense-input" class="text-sm font-semibold text-slate-700">
+                Current Monthly Expense
+                <span class="block text-[11px] font-normal text-slate-400">Your lifestyle cost in today's money</span>
+              </label>
+              <div class="relative w-36">
+                <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+                <input type="number" id="swp-expense-input" min="5000" max="5000000" step="2500" value="50000"
+                  class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+              </div>
+            </div>
+            <input type="range" id="swp-expense-range" min="10000" max="300000" step="2500" value="50000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- 2. Expected Annual Inflation -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="swp-inflation-input" class="text-sm font-semibold text-slate-700">
+                Expected Annual Inflation
+                <span class="block text-[11px] font-normal text-slate-400">Compounds expenses before &amp; during SWP</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="swp-inflation-input" min="0" max="20" step="0.5" value="6"
+                  class="w-full pr-7 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+              </div>
+            </div>
+            <input type="range" id="swp-inflation-range" min="2" max="12" step="0.5" value="6" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- 3. Years After Which SWP Starts -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="swp-defer-years-input" class="text-sm font-semibold text-slate-700">
+                Start SWP After (Years)
+                <span class="block text-[11px] font-normal text-slate-400">e.g. 20 yrs from today (0 = start now)</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="swp-defer-years-input" min="0" max="45" step="1" value="20"
+                  class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">Yrs</span>
+              </div>
+            </div>
+            <input type="range" id="swp-defer-years-range" min="0" max="35" step="1" value="20" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- 4. Wealth Accumulated by SWP Start -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="swp-corpus-input" class="text-sm font-semibold text-slate-700">
+                Accumulated Wealth at SWP Start
+                <span class="block text-[11px] font-normal text-slate-400">Retirement corpus available for SWP</span>
+              </label>
+              <div class="relative w-40">
+                <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+                <input type="number" id="swp-corpus-input" min="100000" max="1000000000" step="500000" value="12225000"
+                  class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+              </div>
+            </div>
+            <input type="range" id="swp-corpus-range" min="1000000" max="100000000" step="500000" value="12225000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- 5. Expected Return on Corpus During SWP -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="swp-return-input" class="text-sm font-semibold text-slate-700">
+                Return Rate on Wealth During SWP
+                <span class="block text-[11px] font-normal text-slate-400">Post-retirement hybrid/debt return (p.a.)</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="swp-return-input" min="1" max="25" step="0.5" value="9"
+                  class="w-full pr-7 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+              </div>
+            </div>
+            <input type="range" id="swp-return-range" min="4" max="16" step="0.5" value="9" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+
+          <!-- 6. SWP Withdrawal Horizon -->
+          <div class="space-y-1.5 pt-2 border-t border-slate-100">
+            <div class="flex justify-between items-center">
+              <label for="swp-duration-input" class="text-sm font-semibold text-slate-700">
+                SWP Withdrawal Duration
+                <span class="block text-[11px] font-normal text-slate-400">Years you need retirement income</span>
+              </label>
+              <div class="relative w-36">
+                <input type="number" id="swp-duration-input" min="5" max="50" step="1" value="25"
+                  class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 bg-slate-50">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">Yrs</span>
+              </div>
+            </div>
+            <input type="range" id="swp-duration-range" min="5" max="45" step="1" value="25" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+        </section>
+
+        <!-- Right Column: SWP Results & Chart -->
+        <section class="lg:col-span-7 space-y-5">
+
+          <!-- 4 SWP KPI Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Starting Monthly SWP After Inflation -->
+            <div class="bg-gradient-to-br from-indigo-700 via-indigo-800 to-slate-900 rounded-2xl p-5 text-white shadow-md">
+              <div class="flex items-center justify-between text-indigo-200 text-xs font-semibold uppercase mb-1">
+                <span id="swp-label-start-yr">1st Year Monthly SWP (After 20Y)</span>
+                <span class="px-2 py-0.5 rounded-full bg-white/15 text-white text-[10px]">Inflation-Indexed</span>
+              </div>
+              <div id="swp-metric-first-withdrawal" class="text-2xl sm:text-3xl font-extrabold font-mono py-1">₹1,60,357/mo</div>
+              <div class="pt-2 border-t border-white/15 text-xs text-indigo-200 flex justify-between">
+                <span>Equals today's: <strong id="swp-metric-today-exp" class="text-white">₹50,000/mo</strong></span>
+                <span id="swp-metric-inflation-mult" class="font-bold text-amber-300">3.21x Cost</span>
+              </div>
+            </div>
+
+            <!-- Corpus Sustainability Status -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase mb-1">
+                  <span>Corpus Sustainability</span>
+                  <span id="swp-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Lasts Full 25 Yrs</span>
+                </div>
+                <div id="swp-metric-remaining-corpus" class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+                <span>Balance after <span id="swp-label-duration">25</span> yrs</span>
+                <span id="swp-depletion-note" class="font-semibold text-brand-700">100% Safe</span>
+              </div>
+            </div>
+
+            <!-- Total Cumulative Withdrawals -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="text-slate-400 text-xs font-semibold uppercase mb-1">Total Cash Withdrawn via SWP</div>
+                <div id="swp-metric-total-withdrawn" class="text-2xl sm:text-3xl font-extrabold text-brand-600 font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+                <span>Final Yr Monthly SWP:</span>
+                <strong id="swp-metric-final-withdrawal" class="text-slate-800 font-mono">₹0/mo</strong>
+              </div>
+            </div>
+
+            <!-- Total Interest Earned During SWP -->
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div class="text-slate-400 text-xs font-semibold uppercase mb-1">Interest Earned During SWP Phase</div>
+                <div id="swp-metric-total-interest" class="text-2xl sm:text-3xl font-extrabold text-accent-600 font-mono py-1">₹0</div>
+              </div>
+              <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between">
+                <span>Starting Corpus:</span>
+                <strong id="swp-metric-start-corpus" class="text-slate-800 font-mono">₹0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- SWP Balance & Withdrawal Trajectory Chart -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 class="text-sm font-bold text-slate-900">SWP Portfolio Balance vs Annual Inflation-Indexed Withdrawals</h3>
+              <span class="text-xs text-slate-400">Year-by-Year Simulation</span>
+            </div>
+            <div class="relative h-72 w-full">
+              <canvas id="swpChart"></canvas>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <!-- SWP Year-by-Year Schedule Table -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+          <div>
+            <h3 class="text-base font-bold text-slate-900">Year-by-Year Inflation-Adjusted SWP Schedule</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Notice how monthly SWP rises every year with inflation while remaining corpus continues earning returns</p>
+          </div>
+        </div>
+        <div class="table-container overflow-x-auto">
+          <table class="w-full text-left text-xs whitespace-nowrap">
+            <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200">
+              <tr>
+                <th class="py-3 px-4">SWP Year</th>
+                <th class="py-3 px-4 text-right">Starting Balance</th>
+                <th class="py-3 px-4 text-right">Monthly SWP (Inflation-Indexed)</th>
+                <th class="py-3 px-4 text-right">Annual Withdrawn</th>
+                <th class="py-3 px-4 text-right">Interest Earned</th>
+                <th class="py-3 px-4 text-right text-brand-900 bg-brand-50/70">Year-End Balance</th>
+              </tr>
+            </thead>
+            <tbody id="swp-table-body" class="divide-y divide-slate-100 font-mono"></tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- PAGE 3: SEO GUIDES & ₹10,000/MONTH AD MONETIZATION BLUEPRINT         -->
+    <!-- =================================================================== -->
+    <div id="page-seo" class="hidden space-y-8">
+
+      <!-- Monetization & SEO Roadmap Dashboard -->
+      <section id="seo-monetization-section" class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+        <div class="border-b border-slate-100 pb-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Owner's Passive Income Playbook</span>
+            <h2 class="text-xl font-bold text-slate-900 mt-1">How to Reach ₹10,000/Month Passive Income &amp; Rank Top 3 on Google</h2>
+          </div>
+          <div class="text-right font-mono bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
+            <span class="text-[11px] text-slate-400 block uppercase">Target Monthly Traffic for ₹10k/mo</span>
+            <span class="text-lg font-extrabold text-brand-700">~35,000 – 50,000 Visitors/mo</span>
+          </div>
+        </div>
+
+        <!-- Traffic & Ad Revenue Math Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
+              <span>1. Display Ads Math (AdSense)</span>
+              <span class="text-brand-600 font-mono">₹200–₹350 RPM</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+              Finance &amp; mutual fund calculators sit in Google AdSense's highest-paying tier. At an average Page RPM of ₹250 (per 1,000 views), <strong>40,000 monthly pageviews = ₹10,000/month</strong> using just 2 clean, non-intrusive ad slots.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
+              <span>2. Top-3 Google SEO Strategy</span>
+              <span class="text-accent-600 font-mono">Low-Competition Keywords</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+              Generic "SIP Calculator" is dominated by Groww &amp; ET Money. You rank Top 3 by targeting <strong>high-intent compound queries</strong> that big sites don't answer well:
+              <em>"10 year SIP 10 year wait calculator"</em>, <em>"Step up SIP with lumpsum calculator"</em>, and <em>"SWP calculator with inflation"</em>.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+            <div class="font-bold text-slate-900 text-sm flex items-center justify-between">
+              <span>3. Smooth Non-Intrusive UX</span>
+              <span class="text-emerald-700 font-mono">0.00 CLS Score</span>
+            </div>
+            <p class="text-slate-600 leading-relaxed">
+              Never use popups or layout-shifting banners. Reserve fixed minimum heights (<code>min-height: 64px</code>) for native ad slots below the KPI cards and before the footer so users calculate without visual clutter.
             </p>
           </div>
         </div>
 
-        <!-- 4. Expected Annual Return Rate -->
-        <div class="space-y-2 pt-2 border-t border-slate-100">
-          <div class="flex justify-between items-center">
-            <label for="return-rate-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              Expected Return Rate (p.a.)
-              <span class="text-xs font-normal text-slate-400">(CAGR)</span>
-            </label>
-            <div class="relative w-36">
-              <input type="number" id="return-rate-input" min="1" max="35" step="0.5" value="12"
-                class="w-full pr-7 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
-            </div>
+        <!-- Copy-Paste AdSense Code Snippet Box -->
+        <div class="bg-slate-900 text-slate-200 rounded-xl p-4 text-xs space-y-2 font-mono">
+          <div class="flex items-center justify-between text-slate-400 font-sans text-[11px]">
+            <span>Where to paste your Google AdSense tag once approved (in index.html):</span>
+            <span class="text-emerald-400 font-semibold">Pre-configured with zero layout shift</span>
           </div>
-          <input type="range" id="return-rate-range" min="1" max="25" step="0.5" value="12" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-          <div class="flex flex-wrap gap-1.5 pt-1">
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="8">Debt (8%)</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="10">Hybrid (10%)</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="12">Large Cap (12%)</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="15">Mid/Small (15%)</button>
-          </div>
+          <pre class="overflow-x-auto text-[11px] text-emerald-300 leading-relaxed"><code>&lt;!-- Replace the .smooth-ad-unit div content with your responsive AdSense unit --&gt;
+&lt;ins class="adsbygoogle"
+     style="display:block; min-height:64px;"
+     data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+     data-ad-slot="1234567890"
+     data-ad-format="horizontal"
+     data-full-width-responsive="true"&gt;&lt;/ins&gt;</code></pre>
         </div>
-
-        <!-- 5. Investment Duration in Years -->
-        <div class="space-y-2 pt-2 border-t border-slate-100">
-          <div class="flex justify-between items-center">
-            <label for="years-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
-              Investment Horizon
-              <span class="text-xs font-normal text-slate-400">(Time period)</span>
-            </label>
-            <div class="relative w-36">
-              <input type="number" id="years-input" min="1" max="40" step="1" value="15"
-                class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">Yrs</span>
-            </div>
-          </div>
-          <input type="range" id="years-range" min="1" max="35" step="1" value="15" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
-          <div class="flex flex-wrap gap-1.5 pt-1">
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="5">5 Years</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="10">10 Years</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="15">15 Years</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="20">20 Years</button>
-            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="25">25 Years</button>
-          </div>
-        </div>
-
       </section>
 
-      <!-- Right Column: Results Dashboard, Charts & Breakdown (7 Columns on Desktop) -->
-      <section class="lg:col-span-7 space-y-6">
+      <!-- Comprehensive SEO Pillar Content (Helps Rank on Google Search) -->
+      <article class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6 text-slate-700 leading-relaxed">
+        <h2 class="text-xl font-bold text-slate-900">Complete Guide: Step-Up SIP with Lumpsum, 10Y SIP + 10Y Wait &amp; Inflation-Adjusted SWP</h2>
 
-        <!-- 4 Key Performance Metric Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Total Expected Corpus -->
-          <div class="bg-gradient-to-br from-brand-600 via-brand-700 to-emerald-900 rounded-2xl p-5 text-white shadow-lg shadow-brand-700/20 relative overflow-hidden">
-            <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-            <div class="flex items-center justify-between text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1">
-              <span>Expected Maturity Corpus</span>
-              <span class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px]">Future Value</span>
-            </div>
-            <div id="metric-corpus" class="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono py-1">₹0</div>
-            <div class="flex items-center justify-between pt-2 border-t border-white/20 text-xs text-brand-100">
-              <span id="metric-corpus-words" class="font-medium text-white/90">Calculating...</span>
-              <span id="metric-multiplier" class="font-bold bg-white text-brand-900 px-2 py-0.5 rounded-md text-[11px]">0.0x Return</span>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          <div class="space-y-2">
+            <h3 class="text-sm font-bold text-slate-900">1. Why Combine Lumpsum with a Step-Up SIP?</h3>
+            <p>
+              Most investors have an existing savings buffer (lumpsum) plus monthly cash flow from their salary. By deploying your available lumpsum on Day 1 and pairing it with an annual Step-Up SIP (increasing contributions by 10% every year as your salary grows), your portfolio benefits from both early compounding and rising capital inflows.
+            </p>
           </div>
 
-          <!-- Total Invested Amount -->
-          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-                <span>Total Amount Invested</span>
-                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-              </div>
-              <div id="metric-invested" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono py-1">₹0</div>
-            </div>
-            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
-              <span>Lumpsum: <strong id="metric-invested-lumpsum" class="text-slate-800">₹0</strong></span>
-              <span>Total SIPs: <strong id="metric-invested-sips" class="text-slate-800">₹0</strong></span>
-            </div>
-          </div>
-
-          <!-- Estimated Wealth Gain (Interest) -->
-          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-                <span>Estimated Wealth Gain</span>
-                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-                </svg>
-              </div>
-              <div id="metric-gain" class="text-2xl sm:text-3xl font-extrabold text-brand-600 tracking-tight font-mono py-1">₹0</div>
-            </div>
-            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
-              <span>Gain Share: <strong id="metric-gain-percent" class="text-brand-600 font-bold">0%</strong></span>
-              <span>of Total Corpus</span>
-            </div>
-          </div>
-
-          <!-- Final Year Monthly SIP -->
-          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
-                <span>Final Year Monthly SIP</span>
-                <svg class="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                </svg>
-              </div>
-              <div id="metric-final-sip" class="text-2xl sm:text-3xl font-extrabold text-accent-600 tracking-tight font-mono py-1">₹0</div>
-            </div>
-            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
-              <span>Grown from: <strong id="metric-initial-sip" class="text-slate-800">₹10,000</strong></span>
-              <span id="metric-sip-growth-badge" class="text-accent-700 bg-accent-50 font-semibold px-2 py-0.5 rounded text-[11px]">+0%</span>
-            </div>
+          <div class="space-y-2">
+            <h3 class="text-sm font-bold text-slate-900">2. The 10-Year SIP + 10-Year Wait Strategy (Coast FIRE)</h3>
+            <p>
+              What happens if you invest ₹10,000/month with a 10% annual step-up for 10 years (plus ₹1 Lakh lumpsum) at 12% return, and then <strong>stop contributing for the next 10 years</strong>?
+              By Year 10, your total out-of-pocket investment is ₹20.12 Lakhs and your corpus is <strong>₹37.04 Lakhs</strong>. Over the next 10 years with zero new SIPs, that ₹37.04 Lakhs compounds into <strong>₹1.22 Crore</strong> by Year 20.
+            </p>
           </div>
         </div>
 
-        <!-- Comparative Advantage Banner -->
-        <div id="comparison-banner" class="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-accent-50 to-indigo-50/50 border border-indigo-100 flex items-center justify-between gap-4">
-          <div class="flex items-start gap-3">
-            <div class="w-9 h-9 rounded-xl bg-accent-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-slate-900">The Power of Step-Up Compounding</h3>
-              <p id="comparison-text" class="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                By stepping up your SIP, you will accumulate significantly more wealth compared to a fixed monthly SIP.
+        <!-- SEO FAQ Accordion -->
+        <div class="border-t border-slate-100 pt-4 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900">Frequently Asked Questions (FAQ)</h3>
+          <div class="space-y-2 text-xs">
+            <details class="p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer" open>
+              <summary class="font-bold text-slate-900">How is Step-Up SIP calculated each year?</summary>
+              <p class="mt-2 text-slate-600">
+                In a compounding Step-Up SIP, Year 1 uses your base monthly SIP. In Year 2, the monthly SIP increases by your step-up percentage or fixed rupee amount. Inside each year, compounding happens monthly using the monthly rate (Annual Return ÷ 12).
               </p>
-            </div>
-          </div>
-          <div class="text-right shrink-0">
-            <span class="text-[11px] text-slate-400 block font-medium uppercase">Extra Wealth</span>
-            <span id="comparison-extra-value" class="text-base sm:text-lg font-bold text-accent-700 font-mono">+₹0</span>
-          </div>
-        </div>
-
-        <!-- Visual Analytics: Charts Section -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-            <div class="flex items-center gap-2">
-              <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
-              </svg>
-              <h3 class="text-sm font-bold text-slate-900">Visual Growth Breakdown</h3>
-            </div>
-            <!-- Chart Toggle Tabs -->
-            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
-              <button type="button" id="tab-growth-chart" class="px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition">
-                Growth Trajectory
-              </button>
-              <button type="button" id="tab-doughnut-chart" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
-                Corpus Distribution
-              </button>
-            </div>
-          </div>
-
-          <!-- Growth Trajectory Chart Container -->
-          <div id="container-growth-chart" class="relative h-72 w-full">
-            <canvas id="growthChart"></canvas>
-          </div>
-
-          <!-- Doughnut Distribution Chart Container -->
-          <div id="container-doughnut-chart" class="hidden relative h-72 w-full flex items-center justify-center">
-            <div class="w-full max-w-xs h-full relative">
-              <canvas id="doughnutChart"></canvas>
-            </div>
-          </div>
-
-          <!-- Chart Legend & Helper -->
-          <div class="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-slate-600 border-t border-slate-100">
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-sm bg-slate-400"></span>
-              <span>Cumulative Invested</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-sm bg-brand-500"></span>
-              <span>Expected Portfolio Corpus</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="w-3 h-3 rounded-sm bg-accent-500"></span>
-              <span>Wealth Gain (Returns)</span>
-            </div>
+            </details>
+            <details class="p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+              <summary class="font-bold text-slate-900">How much corpus do I need for ₹50,000/month expense after 20 years?</summary>
+              <p class="mt-2 text-slate-600">
+                At 6% annual inflation, ₹50,000/month today becomes ₹1,60,357/month in 20 years. To sustain that inflation-indexed withdrawal for 25 years in retirement (assuming 9% post-retirement return), you need approximately ₹2.9 Crore to ₹3.2 Crore at retirement.
+              </p>
+            </details>
           </div>
         </div>
+      </article>
 
-      </section>
     </div>
 
-    <!-- Full Year-by-Year Schedule (Detailed Breakdown Table) -->
-    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="p-5 sm:px-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+    <!-- NON-INTRUSIVE NATIVE SPONSORED SLOT #2 (Bottom Banner Before Footer) -->
+    <div class="smooth-ad-unit ad-slot-card mt-8 rounded-2xl bg-white border border-slate-200 p-4 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-brand-600 font-bold text-xs shrink-0">
+          AD
+        </div>
         <div>
           <div class="flex items-center gap-2">
-            <h2 class="text-base font-bold text-slate-900">Year-by-Year SIP & Corpus Schedule</h2>
-            <span id="schedule-years-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 border border-brand-200">15 Years</span>
+            <span class="text-xs font-bold text-slate-900">Tax-Free Retirement SWP Strategy Guide</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-medium">Partner Resource</span>
           </div>
-          <p class="text-xs text-slate-500 mt-0.5">Complete breakdown of active monthly SIP, annual investment, and compound growth for each individual year</p>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <!-- Table Search / Filter -->
-          <div class="relative w-44">
-            <input type="text" id="table-search" placeholder="Filter year..."
-              class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-brand-500">
-            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-          </div>
-
-          <!-- Secondary CSV Button -->
-          <button id="btn-export-csv-table" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition">
-            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-            </svg>
-            Download CSV
-          </button>
+          <p class="text-xs text-slate-500 mt-0.5">Learn how long-term capital gains (LTCG) harvesting can reduce your effective tax during SWP withdrawals.</p>
         </div>
       </div>
-
-      <!-- Schedule Table -->
-      <div class="table-container overflow-x-auto">
-        <table class="w-full text-left text-xs whitespace-nowrap">
-          <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200 z-10">
-            <tr>
-              <th scope="col" class="py-3 px-4">Year</th>
-              <th scope="col" class="py-3 px-4 text-right">Monthly SIP</th>
-              <th scope="col" class="py-3 px-4 text-right">Annual Contribution</th>
-              <th scope="col" class="py-3 px-4 text-right">Total Invested</th>
-              <th scope="col" class="py-3 px-4 text-right">Yearly Returns</th>
-              <th scope="col" class="py-3 px-4 text-right">Total Wealth Gain</th>
-              <th scope="col" class="py-3 px-4 text-right text-brand-900 bg-brand-50/70">Year-End Corpus</th>
-            </tr>
-          </thead>
-          <tbody id="schedule-table-body" class="divide-y divide-slate-100 font-mono">
-            <!-- Rows injected via JavaScript -->
-          </tbody>
-        </table>
-      </div>
-
-      <div class="p-3.5 bg-slate-50 border-t border-slate-200 text-slate-500 text-[11px] flex flex-wrap items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span>Compounded monthly at nominal rate divided by 12. Monthly investments modeled at start of installment period.</span>
-        </div>
-        <span id="table-row-count" class="font-medium">Showing 15 of 15 years</span>
-      </div>
-    </section>
-
-    <!-- Financial Milestone Badges & Insights -->
-    <section class="mt-8 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-          <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-          </svg>
-          Corpus Milestone Timeline
-        </h3>
-        <span class="text-xs text-slate-400">Time to reach target wealth thresholds</span>
-      </div>
-
-      <div id="milestones-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-        <!-- Milestone Cards injected by JS -->
-      </div>
-    </section>
+      <button type="button" id="btn-ad-learn-more" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition">
+        View SWP Planner &rarr;
+      </button>
+    </div>
 
   </main>
 
-  <!-- Footer -->
+  <!-- Footer with AdSense Mandatory Compliance Links (Privacy, Terms, Disclaimer, About) -->
   <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-slate-500 text-xs">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center gap-4">
       <div>
-        <p class="font-medium text-slate-700">Step-Up SIP & Lumpsum Wealth Planner</p>
-        <p class="text-[11px] text-slate-400 mt-0.5">Built for mutual funds, index funds, and equity systematic investing.</p>
+        <p class="font-bold text-slate-700">Step-Up SIP, Coast FIRE &amp; Inflation-Adjusted SWP Planner</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Built for mutual funds, index funds, and systematic retirement planning.</p>
       </div>
-      <div class="text-[11px] text-slate-400 text-right">
-        <span>Mutual fund investments are subject to market risks. Model is for educational and illustrative purposes.</span>
+      <div class="flex flex-wrap items-center gap-4 text-xs font-medium text-slate-600">
+        <button type="button" class="legal-link hover:text-brand-600" data-doc="about">About Us</button>
+        <button type="button" class="legal-link hover:text-brand-600" data-doc="privacy">Privacy Policy</button>
+        <button type="button" class="legal-link hover:text-brand-600" data-doc="terms">Terms of Use</button>
+        <button type="button" class="legal-link hover:text-brand-600" data-doc="disclaimer">Financial Disclaimer</button>
       </div>
     </div>
   </footer>
 
-  <!-- Script Logic -->
+  <!-- Application Script -->
   <script>
     // State management with URL state persistence and backward-compatible fallbacks
     const state = {
@@ -522,54 +1038,56 @@
       stepUpValue: 10,
       compoundStepUp: true,
       returnRate: 12.0,
-      years: 15,
+      years: 10,
+      waitYears: 10,
       currency: 'INR',
-      chartType: 'trajectory' // 'trajectory' or 'doughnut'
+      activePage: 'sip', // 'sip', 'swp', 'seo'
+      // SWP state
+      swpCurrentExpense: 50000,
+      swpInflation: 6.0,
+      swpDeferYears: 20,
+      swpCorpus: 12225000,
+      swpReturn: 9.0,
+      swpDuration: 25
     };
 
     // Parse URL query parameters to support backward-compatible shared links
     function loadStateFromUrl() {
       try {
         const params = new URLSearchParams(window.location.search);
-        
-        // Backward-compatible query keys: 'lumpsum' or 'lump_sum'
+
         if (params.has('lumpsum')) state.lumpsum = Math.max(0, parseFloat(params.get('lumpsum')) || 0);
         else if (params.has('lump_sum')) state.lumpsum = Math.max(0, parseFloat(params.get('lump_sum')) || 0);
 
-        // 'sip' or 'monthlySip'
         if (params.has('monthlySip')) state.monthlySip = Math.max(0, parseFloat(params.get('monthlySip')) || 0);
         else if (params.has('sip')) state.monthlySip = Math.max(0, parseFloat(params.get('sip')) || 0);
 
-        // 'stepUpType' or 'step_up_type' or 'type'
         if (params.has('stepUpType')) state.stepUpType = params.get('stepUpType') === 'value' ? 'value' : 'percent';
         else if (params.has('step_up_type')) state.stepUpType = params.get('step_up_type') === 'value' ? 'value' : 'percent';
         else if (params.has('type')) state.stepUpType = params.get('type') === 'value' ? 'value' : 'percent';
 
-        // 'stepUpValue' or 'step_up' or 'stepup'
         if (params.has('stepUpValue')) state.stepUpValue = Math.max(0, parseFloat(params.get('stepUpValue')) || 0);
         else if (params.has('step_up')) state.stepUpValue = Math.max(0, parseFloat(params.get('step_up')) || 0);
         else if (params.has('stepup')) state.stepUpValue = Math.max(0, parseFloat(params.get('stepup')) || 0);
 
-        // 'returnRate' or 'rate' or 'return'
         if (params.has('returnRate')) state.returnRate = Math.max(0, parseFloat(params.get('returnRate')) || 0);
         else if (params.has('rate')) state.returnRate = Math.max(0, parseFloat(params.get('rate')) || 0);
         else if (params.has('return')) state.returnRate = Math.max(0, parseFloat(params.get('return')) || 0);
 
-        // 'years' or 'tenure'
-        if (params.has('years')) state.years = Math.max(1, Math.min(50, parseInt(params.get('years'), 10) || 15));
-        else if (params.has('tenure')) state.years = Math.max(1, Math.min(50, parseInt(params.get('tenure'), 10) || 15));
+        if (params.has('years')) state.years = Math.max(1, Math.min(50, parseInt(params.get('years'), 10) || 10));
+        else if (params.has('tenure')) state.years = Math.max(1, Math.min(50, parseInt(params.get('tenure'), 10) || 10));
 
-        // 'currency'
+        if (params.has('wait')) state.waitYears = Math.max(0, Math.min(40, parseInt(params.get('wait'), 10) || 0));
+        else if (params.has('waitYears')) state.waitYears = Math.max(0, Math.min(40, parseInt(params.get('waitYears'), 10) || 0));
+
         if (params.has('currency')) state.currency = params.get('currency');
-
-        // 'compound'
         if (params.has('compound')) state.compoundStepUp = params.get('compound') !== 'false';
+        if (params.has('page')) state.activePage = params.get('page');
       } catch (err) {
-        // Fallback gracefully on parsing errors
+        // Fallback gracefully
       }
     }
 
-    // Sync input fields with current state values
     function syncInputsFromState() {
       document.getElementById('lumpsum-input').value = state.lumpsum;
       document.getElementById('lumpsum-range').value = state.lumpsum;
@@ -581,11 +1099,25 @@
       document.getElementById('return-rate-range').value = state.returnRate;
       document.getElementById('years-input').value = state.years;
       document.getElementById('years-range').value = state.years;
+      document.getElementById('wait-years-input').value = state.waitYears;
+      document.getElementById('wait-years-range').value = state.waitYears;
       document.getElementById('currency-select').value = state.currency;
       document.getElementById('compound-stepup-toggle').checked = state.compoundStepUp;
+
+      document.getElementById('swp-expense-input').value = state.swpCurrentExpense;
+      document.getElementById('swp-expense-range').value = state.swpCurrentExpense;
+      document.getElementById('swp-inflation-input').value = state.swpInflation;
+      document.getElementById('swp-inflation-range').value = state.swpInflation;
+      document.getElementById('swp-defer-years-input').value = state.swpDeferYears;
+      document.getElementById('swp-defer-years-range').value = state.swpDeferYears;
+      document.getElementById('swp-corpus-input').value = Math.round(state.swpCorpus);
+      document.getElementById('swp-corpus-range').value = Math.round(state.swpCorpus);
+      document.getElementById('swp-return-input').value = state.swpReturn;
+      document.getElementById('swp-return-range').value = state.swpReturn;
+      document.getElementById('swp-duration-input').value = state.swpDuration;
+      document.getElementById('swp-duration-range').value = state.swpDuration;
     }
 
-    // Preset options
     const presetsConfig = {
       percent: [
         { label: '5%', value: 5 },
@@ -603,13 +1135,7 @@
       ]
     };
 
-    // Currency formatting helpers
-    const currencySymbols = {
-      INR: '₹',
-      USD: '$',
-      EUR: '€',
-      GBP: '£'
-    };
+    const currencySymbols = { INR: '₹', USD: '$', EUR: '€', GBP: '£' };
 
     function getCurrencySymbol() {
       return currencySymbols[state.currency] || '₹';
@@ -621,24 +1147,16 @@
 
       if (state.currency === 'INR') {
         if (compact) {
-          if (Math.abs(amount) >= 10000000) {
-            return `${sym}${(amount / 10000000).toFixed(2)} Cr`;
-          } else if (Math.abs(amount) >= 100000) {
-            return `${sym}${(amount / 100000).toFixed(2)} Lakh`;
-          } else if (Math.abs(amount) >= 1000) {
-            return `${sym}${(amount / 1000).toFixed(1)}K`;
-          }
+          if (Math.abs(amount) >= 10000000) return `${sym}${(amount / 10000000).toFixed(2)} Cr`;
+          if (Math.abs(amount) >= 100000) return `${sym}${(amount / 100000).toFixed(2)} Lakh`;
+          if (Math.abs(amount) >= 1000) return `${sym}${(amount / 1000).toFixed(1)}K`;
         }
         return `${sym}${Number(amount.toFixed(0)).toLocaleString('en-IN')}`;
       } else {
         if (compact) {
-          if (Math.abs(amount) >= 1000000000) {
-            return `${sym}${(amount / 1000000000).toFixed(2)}B`;
-          } else if (Math.abs(amount) >= 1000000) {
-            return `${sym}${(amount / 1000000).toFixed(2)}M`;
-          } else if (Math.abs(amount) >= 1000) {
-            return `${sym}${(amount / 1000).toFixed(1)}K`;
-          }
+          if (Math.abs(amount) >= 1000000000) return `${sym}${(amount / 1000000000).toFixed(2)}B`;
+          if (Math.abs(amount) >= 1000000) return `${sym}${(amount / 1000000).toFixed(2)}M`;
+          if (Math.abs(amount) >= 1000) return `${sym}${(amount / 1000).toFixed(1)}K`;
         }
         return `${sym}${Number(amount.toFixed(0)).toLocaleString('en-US')}`;
       }
@@ -647,60 +1165,57 @@
     function formatNumberWords(amount) {
       if (isNaN(amount) || amount === 0) return 'Nil';
       if (state.currency === 'INR') {
-        if (amount >= 10000000) {
-          const cr = (amount / 10000000).toFixed(2);
-          return `≈ ${cr} Crores`;
-        } else if (amount >= 100000) {
-          const lk = (amount / 100000).toFixed(2);
-          return `≈ ${lk} Lakhs`;
-        } else if (amount >= 1000) {
-          return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
-        }
+        if (amount >= 10000000) return `≈ ${(amount / 10000000).toFixed(2)} Crores`;
+        if (amount >= 100000) return `≈ ${(amount / 100000).toFixed(2)} Lakhs`;
+        if (amount >= 1000) return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
       } else {
-        if (amount >= 1000000000) {
-          return `≈ ${(amount / 1000000000).toFixed(2)} Billion`;
-        } else if (amount >= 1000000) {
-          return `≈ ${(amount / 1000000).toFixed(2)} Million`;
-        } else if (amount >= 1000) {
-          return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
-        }
+        if (amount >= 1000000000) return `≈ ${(amount / 1000000000).toFixed(2)} Billion`;
+        if (amount >= 1000000) return `≈ ${(amount / 1000000).toFixed(2)} Million`;
+        if (amount >= 1000) return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
       }
       return '';
     }
 
-    // Calculation core
+    // Core SIP + Wait Calculation
     function calculateSchedule() {
       const r_monthly = (state.returnRate / 100) / 12;
-      const years = state.years;
+      const sipYears = state.years;
+      const waitYears = state.waitYears;
+      const totalYears = sipYears + waitYears;
       const schedule = [];
 
       let current_balance = state.lumpsum;
       let total_invested = state.lumpsum;
+      let peak_sip = state.monthlySip;
 
-      for (let y = 1; y <= years; y++) {
-        let sip_this_year = state.monthlySip;
+      for (let y = 1; y <= totalYears; y++) {
+        const isWaitPhase = y > sipYears;
+        let sip_this_year = 0;
 
-        if (y > 1) {
-          if (state.stepUpType === 'percent') {
-            if (state.compoundStepUp) {
-              sip_this_year = schedule[y - 2].monthly_sip * (1 + state.stepUpValue / 100);
-            } else {
-              sip_this_year = state.monthlySip * (1 + (y - 1) * (state.stepUpValue / 100));
-            }
+        if (!isWaitPhase) {
+          if (y === 1) {
+            sip_this_year = state.monthlySip;
           } else {
-            // Fixed amount
-            if (state.compoundStepUp) {
-              sip_this_year = schedule[y - 2].monthly_sip + state.stepUpValue;
+            if (state.stepUpType === 'percent') {
+              if (state.compoundStepUp) {
+                sip_this_year = schedule[y - 2].monthly_sip * (1 + state.stepUpValue / 100);
+              } else {
+                sip_this_year = state.monthlySip * (1 + (y - 1) * (state.stepUpValue / 100));
+              }
             } else {
-              sip_this_year = state.monthlySip + (y - 1) * state.stepUpValue;
+              if (state.compoundStepUp) {
+                sip_this_year = schedule[y - 2].monthly_sip + state.stepUpValue;
+              } else {
+                sip_this_year = state.monthlySip + (y - 1) * state.stepUpValue;
+              }
             }
           }
+          peak_sip = sip_this_year;
         }
 
         const start_year_balance = current_balance;
         const yearly_sip_invested = sip_this_year * 12;
 
-        // Month by month compounding (beginning of month deposit)
         for (let m = 0; m < 12; m++) {
           current_balance = (current_balance + sip_this_year) * (1 + r_monthly);
         }
@@ -711,6 +1226,7 @@
 
         schedule.push({
           year: y,
+          phase: isWaitPhase ? 'Wait Phase' : 'Active SIP',
           monthly_sip: sip_this_year,
           yearly_sip: yearly_sip_invested,
           cumulative_invested: total_invested,
@@ -720,26 +1236,86 @@
         });
       }
 
-      // Flat SIP comparison (without stepup)
+      // Flat SIP comparison (over same active SIP years + wait years)
       let flat_balance = state.lumpsum;
-      let flat_invested = state.lumpsum + (state.monthlySip * 12 * years);
-      for (let m = 0; m < years * 12; m++) {
-        flat_balance = (flat_balance + state.monthlySip) * (1 + r_monthly);
+      for (let y_f = 1; y_f <= totalYears; y_f++) {
+        const m_sip = y_f <= sipYears ? state.monthlySip : 0;
+        for (let m = 0; m < 12; m++) {
+          flat_balance = (flat_balance + m_sip) * (1 + r_monthly);
+        }
       }
 
       return {
         schedule,
         flatCorpus: flat_balance,
-        flatInvested: flat_invested
+        peakSip: peak_sip
       };
     }
 
-    // Chart instances
+    // Core Inflation-Adjusted SWP Calculation
+    function calculateSwpSchedule() {
+      const firstYearMonthlySwp = state.swpCurrentExpense * Math.pow(1 + state.swpInflation / 100, state.swpDeferYears);
+      const r_monthly = (state.swpReturn / 100) / 12;
+      let balance = state.swpCorpus;
+      let totalWithdrawn = 0;
+      let totalInterest = 0;
+      let depletedYear = null;
+      const schedule = [];
+
+      for (let y = 1; y <= state.swpDuration; y++) {
+        const monthlyWithdrawal = firstYearMonthlySwp * Math.pow(1 + state.swpInflation / 100, y - 1);
+        const startBal = balance;
+        let yrWithdrawn = 0;
+        let yrInterest = 0;
+
+        for (let m = 1; m <= 12; m++) {
+          if (balance <= 0) {
+            if (depletedYear === null) depletedYear = y;
+            break;
+          }
+          const actualW = Math.min(balance, monthlyWithdrawal);
+          balance -= actualW;
+          yrWithdrawn += actualW;
+
+          const intEarned = balance * r_monthly;
+          balance += intEarned;
+          yrInterest += intEarned;
+
+          if (balance <= 0.01 && depletedYear === null) {
+            balance = 0;
+            depletedYear = y;
+          }
+        }
+
+        totalWithdrawn += yrWithdrawn;
+        totalInterest += yrInterest;
+
+        schedule.push({
+          year: y,
+          start_balance: startBal,
+          monthly_withdrawal: monthlyWithdrawal,
+          annual_withdrawal: yrWithdrawn,
+          interest_earned: yrInterest,
+          end_balance: Math.max(0, balance)
+        });
+      }
+
+      return {
+        firstYearMonthlySwp,
+        totalWithdrawn,
+        totalInterest,
+        finalBalance: Math.max(0, balance),
+        depletedYear,
+        schedule
+      };
+    }
+
+    // Charts
     let growthChartInstance = null;
     let doughnutChartInstance = null;
+    let swpChartInstance = null;
 
     function initCharts() {
-      // Growth Trajectory Chart
       const ctxGrowth = document.getElementById('growthChart').getContext('2d');
       growthChartInstance = new Chart(ctxGrowth, {
         type: 'line',
@@ -755,8 +1331,7 @@
               tension: 0.35,
               borderWidth: 2.5,
               pointBackgroundColor: '#059669',
-              pointRadius: 3,
-              pointHoverRadius: 6
+              pointRadius: 3
             },
             {
               label: 'Total Invested',
@@ -768,18 +1343,14 @@
               borderWidth: 2,
               borderDash: [5, 5],
               pointBackgroundColor: '#64748b',
-              pointRadius: 2,
-              pointHoverRadius: 5
+              pointRadius: 2
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false
-          },
+          interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -791,24 +1362,18 @@
             }
           },
           scales: {
-            x: {
-              grid: { display: false },
-              ticks: { font: { family: '"JetBrains Mono"', size: 10 } }
-            },
+            x: { grid: { display: false }, ticks: { font: { family: '"JetBrains Mono"', size: 10 } } },
             y: {
               grid: { color: '#f1f5f9' },
               ticks: {
                 font: { family: '"JetBrains Mono"', size: 10 },
-                callback: function(value) {
-                  return formatCurrency(value, true);
-                }
+                callback: function(value) { return formatCurrency(value, true); }
               }
             }
           }
         }
       });
 
-      // Doughnut Distribution Chart
       const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
       doughnutChartInstance = new Chart(ctxDoughnut, {
         type: 'doughnut',
@@ -818,8 +1383,7 @@
             data: [1, 1, 1],
             backgroundColor: ['#94a3b8', '#6366f1', '#10b981'],
             borderWidth: 2,
-            borderColor: '#ffffff',
-            hoverOffset: 4
+            borderColor: '#ffffff'
           }]
         },
         options: {
@@ -827,19 +1391,62 @@
           maintainAspectRatio: false,
           cutout: '72%',
           plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                font: { family: '"Plus Jakarta Sans"', size: 11, weight: '600' },
-                boxWidth: 12,
-                padding: 14
-              }
-            },
+            legend: { position: 'bottom', labels: { font: { family: '"Plus Jakarta Sans"', size: 11, weight: '600' }, boxWidth: 12 } },
             tooltip: {
               callbacks: {
-                label: function(context) {
-                  return ` ${context.label}: ${formatCurrency(context.raw)}`;
-                }
+                label: function(context) { return ` ${context.label}: ${formatCurrency(context.raw)}`; }
+              }
+            }
+          }
+        }
+      });
+
+      const ctxSwp = document.getElementById('swpChart').getContext('2d');
+      swpChartInstance = new Chart(ctxSwp, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Remaining Corpus Balance',
+              data: [],
+              borderColor: '#4f46e5',
+              backgroundColor: 'rgba(99, 102, 241, 0.12)',
+              fill: true,
+              tension: 0.3,
+              borderWidth: 2.5
+            },
+            {
+              label: 'Annual Inflation-Indexed Withdrawal',
+              data: [],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              fill: false,
+              tension: 0.3,
+              borderWidth: 2,
+              borderDash: [4, 4]
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top', labels: { font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return ` ${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`; }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { font: { family: '"JetBrains Mono"', size: 10 } } },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { family: '"JetBrains Mono"', size: 10 },
+                callback: function(v) { return formatCurrency(v, true); }
               }
             }
           }
@@ -849,51 +1456,43 @@
 
     function updateCharts(schedule) {
       if (!growthChartInstance || !doughnutChartInstance) return;
-
-      const labels = schedule.map(row => `Yr ${row.year}`);
-      const corpusData = schedule.map(row => row.year_end_corpus);
-      const investedData = schedule.map(row => row.cumulative_invested);
-
-      growthChartInstance.data.labels = labels;
-      growthChartInstance.data.datasets[0].data = corpusData;
-      growthChartInstance.data.datasets[1].data = investedData;
+      growthChartInstance.data.labels = schedule.map(r => `Yr ${r.year}`);
+      growthChartInstance.data.datasets[0].data = schedule.map(r => r.year_end_corpus);
+      growthChartInstance.data.datasets[1].data = schedule.map(r => r.cumulative_invested);
       growthChartInstance.update();
 
       const lastRow = schedule[schedule.length - 1];
-      const lumpsumAmount = state.lumpsum;
-      const totalSipContributed = lastRow.cumulative_invested - lumpsumAmount;
-      const totalGain = lastRow.total_gains;
-
-      doughnutChartInstance.data.datasets[0].data = [lumpsumAmount, totalSipContributed, totalGain];
+      doughnutChartInstance.data.datasets[0].data = [
+        state.lumpsum,
+        lastRow.cumulative_invested - state.lumpsum,
+        lastRow.total_gains
+      ];
       doughnutChartInstance.update();
     }
 
-    // Milestones definition
     function updateMilestones(schedule) {
       const container = document.getElementById('milestones-grid');
       container.innerHTML = '';
 
-      let targets = [];
-      if (state.currency === 'INR') {
-        targets = [
-          { label: '₹10 Lakhs', value: 1000000 },
-          { label: '₹25 Lakhs', value: 2500000 },
-          { label: '₹50 Lakhs', value: 5000000 },
-          { label: '₹1 Crore', value: 10000000 },
-          { label: '₹2 Crores', value: 20000000 },
-          { label: '₹5 Crores', value: 50000000 }
-        ];
-      } else {
-        targets = [
-          { label: '$50,000', value: 50000 },
-          { label: '$100,000', value: 100000 },
-          { label: '$250,000', value: 250000 },
-          { label: '$500,000', value: 500000 },
-          { label: '$1 Million', value: 1000000 },
-          { label: '$2 Million', value: 2000000 }
-        ];
-      }
+      const targets = state.currency === 'INR'
+        ? [
+            { label: '₹10 Lakhs', value: 1000000 },
+            { label: '₹25 Lakhs', value: 2500000 },
+            { label: '₹50 Lakhs', value: 5000000 },
+            { label: '₹1 Crore', value: 10000000 },
+            { label: '₹2 Crores', value: 20000000 },
+            { label: '₹5 Crores', value: 50000000 }
+          ]
+        : [
+            { label: '$50,000', value: 50000 },
+            { label: '$100,000', value: 100000 },
+            { label: '$250,000', value: 250000 },
+            { label: '$500,000', value: 500000 },
+            { label: '$1 Million', value: 1000000 },
+            { label: '$2 Million', value: 2000000 }
+          ];
 
+      const totalHorizon = state.years + state.waitYears;
       targets.forEach(target => {
         let reachedYear = null;
         for (const row of schedule) {
@@ -902,75 +1501,136 @@
             break;
           }
         }
-
         const card = document.createElement('div');
         card.className = `p-3 rounded-xl border text-center ${
-          reachedYear 
-            ? 'bg-brand-50/60 border-brand-200 text-brand-900' 
-            : 'bg-slate-50 border-slate-200 text-slate-400'
+          reachedYear ? 'bg-brand-50/60 border-brand-200 text-brand-900' : 'bg-slate-50 border-slate-200 text-slate-400'
         }`;
-
         card.innerHTML = `
           <span class="block text-xs font-bold ${reachedYear ? 'text-brand-900' : 'text-slate-500'}">${target.label}</span>
           <div class="mt-1 text-xs">
-            ${reachedYear 
-              ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-brand-600 text-white shadow-xs">Year ${reachedYear}</span>` 
-              : `<span class="text-[11px] font-medium text-slate-400">Beyond ${state.years}y</span>`}
+            ${reachedYear
+              ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-brand-600 text-white shadow-xs">Year ${reachedYear}</span>`
+              : `<span class="text-[11px] font-medium text-slate-400">Beyond ${totalHorizon}y</span>`}
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    // Render schedule table
     function renderTable(schedule) {
       const tbody = document.getElementById('schedule-table-body');
       tbody.innerHTML = '';
-
       const query = document.getElementById('table-search').value.trim().toLowerCase();
 
       let visibleCount = 0;
       schedule.forEach((row, idx) => {
-        const matchesQuery = query === '' || 
-          `year ${row.year}`.includes(query) || 
+        const matchesQuery = query === '' ||
+          `year ${row.year}`.includes(query) ||
+          row.phase.toLowerCase().includes(query) ||
           `${row.year}`.includes(query);
 
         if (!matchesQuery) return;
         visibleCount++;
 
+        const isWait = row.phase === 'Wait Phase';
         const tr = document.createElement('tr');
-        tr.className = idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80 transition' : 'bg-slate-50/50 hover:bg-slate-100/60 transition';
+        tr.className = isWait
+          ? 'bg-indigo-50/40 hover:bg-indigo-50/80 transition'
+          : (idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80 transition' : 'bg-slate-50/50 hover:bg-slate-100/60 transition');
 
         tr.innerHTML = `
-          <td class="py-3 px-4 font-bold text-slate-900 flex items-center gap-1.5">
-            <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-sans font-bold">${row.year}</span>
+          <td class="py-3 px-4 font-bold text-slate-900 flex items-center gap-2">
+            <span class="w-5 h-5 rounded-full ${isWait ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'} flex items-center justify-center text-[10px] font-sans font-bold">${row.year}</span>
             <span>Year ${row.year}</span>
+            <span class="text-[10px] font-sans px-1.5 py-0.5 rounded ${isWait ? 'bg-indigo-100 text-indigo-800 font-semibold' : 'bg-emerald-50 text-emerald-700'}">${row.phase}</span>
           </td>
-          <td class="py-3 px-4 text-right font-semibold text-slate-800">${formatCurrency(row.monthly_sip)}</td>
+          <td class="py-3 px-4 text-right font-semibold ${isWait ? 'text-slate-400' : 'text-slate-800'}">${formatCurrency(row.monthly_sip)}</td>
           <td class="py-3 px-4 text-right text-slate-600">${formatCurrency(row.yearly_sip)}</td>
           <td class="py-3 px-4 text-right text-slate-700">${formatCurrency(row.cumulative_invested)}</td>
           <td class="py-3 px-4 text-right text-brand-600 font-medium">+${formatCurrency(row.year_returns)}</td>
           <td class="py-3 px-4 text-right text-emerald-700 font-semibold">+${formatCurrency(row.total_gains)}</td>
           <td class="py-3 px-4 text-right font-bold text-brand-900 bg-brand-50/50">${formatCurrency(row.year_end_corpus)}</td>
         `;
-
         tbody.appendChild(tr);
       });
 
       document.getElementById('table-row-count').textContent = `Showing ${visibleCount} of ${schedule.length} years`;
-      document.getElementById('schedule-years-badge').textContent = `${state.years} Years`;
+      document.getElementById('schedule-years-badge').textContent = `${schedule.length} Years Total`;
     }
 
-    // Main update routine
-    function recalculate() {
-      const { schedule, flatCorpus } = calculateSchedule();
-      const finalRow = schedule[schedule.length - 1];
+    function recalculateSwp() {
+      const res = calculateSwpSchedule();
+      const mult = Math.pow(1 + state.swpInflation / 100, state.swpDeferYears).toFixed(2);
 
-      // Update KPI cards
+      document.getElementById('swp-label-start-yr').textContent = `1st Year Monthly SWP (After ${state.swpDeferYears}Y)`;
+      document.getElementById('swp-metric-first-withdrawal').textContent = `${formatCurrency(res.firstYearMonthlySwp)}/mo`;
+      document.getElementById('swp-metric-today-exp').textContent = `${formatCurrency(state.swpCurrentExpense)}/mo`;
+      document.getElementById('swp-metric-inflation-mult').textContent = `${mult}x Cost`;
+
+      document.getElementById('swp-metric-remaining-corpus').textContent = formatCurrency(res.finalBalance, true);
+      document.getElementById('swp-label-duration').textContent = state.swpDuration;
+
+      const statusBadge = document.getElementById('swp-status-badge');
+      const depletionNote = document.getElementById('swp-depletion-note');
+      if (res.depletedYear === null) {
+        statusBadge.textContent = `Lasts Full ${state.swpDuration} Yrs`;
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800';
+        depletionNote.textContent = 'Sustainable';
+        depletionNote.className = 'font-semibold text-brand-700';
+      } else {
+        statusBadge.textContent = `Depletes in Year ${res.depletedYear}`;
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800';
+        depletionNote.textContent = `Shortfall at Yr ${res.depletedYear}`;
+        depletionNote.className = 'font-semibold text-rose-600';
+      }
+
+      document.getElementById('swp-metric-total-withdrawn').textContent = formatCurrency(res.totalWithdrawn, true);
+      const lastRow = res.schedule[res.schedule.length - 1];
+      document.getElementById('swp-metric-final-withdrawal').textContent = `${formatCurrency(lastRow.monthly_withdrawal)}/mo`;
+      document.getElementById('swp-metric-total-interest').textContent = formatCurrency(res.totalInterest, true);
+      document.getElementById('swp-metric-start-corpus').textContent = formatCurrency(state.swpCorpus, true);
+
+      if (swpChartInstance) {
+        swpChartInstance.data.labels = res.schedule.map(r => `SWP Yr ${r.year}`);
+        swpChartInstance.data.datasets[0].data = res.schedule.map(r => r.end_balance);
+        swpChartInstance.data.datasets[1].data = res.schedule.map(r => r.annual_withdrawal);
+        swpChartInstance.update();
+      }
+
+      const tbody = document.getElementById('swp-table-body');
+      tbody.innerHTML = '';
+      res.schedule.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = r.end_balance <= 0
+          ? 'bg-rose-50/60 text-rose-900'
+          : (idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50');
+        tr.innerHTML = `
+          <td class="py-2.5 px-4 font-bold">Year ${r.year} <span class="text-[10px] text-slate-400 font-normal">(Yr ${state.swpDeferYears + r.year})</span></td>
+          <td class="py-2.5 px-4 text-right">${formatCurrency(r.start_balance)}</td>
+          <td class="py-2.5 px-4 text-right font-semibold text-indigo-700">${formatCurrency(r.monthly_withdrawal)}/mo</td>
+          <td class="py-2.5 px-4 text-right text-amber-700">${formatCurrency(r.annual_withdrawal)}</td>
+          <td class="py-2.5 px-4 text-right text-emerald-600">+${formatCurrency(r.interest_earned)}</td>
+          <td class="py-2.5 px-4 text-right font-bold bg-brand-50/40">${formatCurrency(r.end_balance)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function recalculate() {
+      const { schedule, flatCorpus, peakSip } = calculateSchedule();
+      const finalRow = schedule[schedule.length - 1];
+      const sipEndRow = schedule[state.years - 1] || finalRow;
+      const totalHorizon = state.years + state.waitYears;
+
+      document.getElementById('label-sip-years-count').textContent = state.years;
+      document.getElementById('label-maturity-heading').textContent = state.waitYears > 0
+        ? `Expected Corpus (${state.years}Y SIP + ${state.waitYears}Y Wait)`
+        : `Expected Maturity Corpus (Yr ${totalHorizon})`;
+
       document.getElementById('metric-corpus').textContent = formatCurrency(finalRow.year_end_corpus);
       document.getElementById('metric-corpus-words').textContent = formatNumberWords(finalRow.year_end_corpus);
 
-      const multiplier = (finalRow.year_end_corpus / finalRow.cumulative_invested).toFixed(2);
+      const multiplier = (finalRow.year_end_corpus / (finalRow.cumulative_invested || 1)).toFixed(2);
       document.getElementById('metric-multiplier').textContent = `${multiplier}x Return`;
 
       document.getElementById('metric-invested').textContent = formatCurrency(finalRow.cumulative_invested);
@@ -978,42 +1638,51 @@
       document.getElementById('metric-invested-sips').textContent = formatCurrency(finalRow.cumulative_invested - state.lumpsum);
 
       document.getElementById('metric-gain').textContent = formatCurrency(finalRow.total_gains);
-      const gainPercent = ((finalRow.total_gains / finalRow.year_end_corpus) * 100).toFixed(1);
+      const gainPercent = ((finalRow.total_gains / (finalRow.year_end_corpus || 1)) * 100).toFixed(1);
       document.getElementById('metric-gain-percent').textContent = `${gainPercent}%`;
 
-      document.getElementById('metric-final-sip').textContent = `${formatCurrency(finalRow.monthly_sip)}/mo`;
+      document.getElementById('metric-final-sip').textContent = `${formatCurrency(peakSip)}/mo`;
       document.getElementById('metric-initial-sip').textContent = `${formatCurrency(state.monthlySip)}/mo`;
 
-      const sipGrowthRate = (((finalRow.monthly_sip - state.monthlySip) / state.monthlySip) * 100).toFixed(0);
+      const sipGrowthRate = (((peakSip - state.monthlySip) / (state.monthlySip || 1)) * 100).toFixed(0);
       document.getElementById('metric-sip-growth-badge').textContent = `+${sipGrowthRate}%`;
 
-      // Comparison Banner
+      // Update Wait Phase Spotlight Banner
+      const waitBanner = document.getElementById('wait-phase-banner');
+      if (state.waitYears > 0) {
+        waitBanner.classList.remove('hidden');
+        const waitGain = finalRow.year_end_corpus - sipEndRow.year_end_corpus;
+        document.getElementById('wait-banner-title').textContent = `${state.years}-Year Active SIP + ${state.waitYears}-Year Wait (Total ${totalHorizon} Years)`;
+        document.getElementById('wait-banner-desc').innerHTML = `
+          At Year ${state.years} (when you stop SIP), your wealth is <strong class="text-white">${formatCurrency(sipEndRow.year_end_corpus, true)}</strong>. 
+          Letting it compound untouched for <strong>${state.waitYears} more years</strong> with ₹0 monthly SIP generates an additional 
+          <strong class="text-emerald-300">+${formatCurrency(waitGain, true)}</strong>, taking total wealth to <strong class="text-white">${formatCurrency(finalRow.year_end_corpus, true)}</strong>!
+        `;
+        document.getElementById('wait-banner-gain').textContent = `+${formatCurrency(waitGain, true)}`;
+      } else {
+        waitBanner.classList.add('hidden');
+      }
+
       const extraWealth = finalRow.year_end_corpus - flatCorpus;
       document.getElementById('comparison-extra-value').textContent = `+${formatCurrency(extraWealth, true)}`;
       document.getElementById('comparison-text').innerHTML = `
-        A regular flat SIP without step-up would yield <strong>${formatCurrency(flatCorpus, true)}</strong>. 
-        Your <strong>${state.stepUpValue}${state.stepUpType === 'percent' ? '%' : ' ' + getCurrencySymbol()}</strong> annual step-up generates an extra 
-        <strong class="text-accent-700">${formatCurrency(extraWealth, true)}</strong> in wealth!
+        A flat SIP without step-up yields <strong>${formatCurrency(flatCorpus, true)}</strong>. 
+        Your <strong>${state.stepUpValue}${state.stepUpType === 'percent' ? '%' : ' ' + getCurrencySymbol()}</strong> annual step-up adds an extra 
+        <strong class="text-accent-700">${formatCurrency(extraWealth, true)}</strong>!
       `;
 
-      // Update currency symbols across page
-      document.querySelectorAll('.currency-symbol').forEach(el => {
-        el.textContent = getCurrencySymbol();
-      });
+      document.querySelectorAll('.currency-symbol').forEach(el => { el.textContent = getCurrencySymbol(); });
 
-      // Update charts & tables
       updateCharts(schedule);
       renderTable(schedule);
       updateMilestones(schedule);
+      recalculateSwp();
     }
 
-    // Step-up presets builder
     function renderStepUpPresets() {
       const container = document.getElementById('stepup-presets-container');
       container.innerHTML = '';
-      const list = presetsConfig[state.stepUpType];
-
-      list.forEach(item => {
+      presetsConfig[state.stepUpType].forEach(item => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition';
@@ -1024,21 +1693,94 @@
       });
     }
 
-    // Setup Event Listeners
+    function switchPage(page) {
+      state.activePage = page;
+      const pSip = document.getElementById('page-sip');
+      const pSwp = document.getElementById('page-swp');
+      const pSeo = document.getElementById('page-seo');
+      const bSip = document.getElementById('nav-sip-page');
+      const bSwp = document.getElementById('nav-swp-page');
+      const bSeo = document.getElementById('nav-seo-page');
+
+      pSip.classList.toggle('hidden', page !== 'sip');
+      pSwp.classList.toggle('hidden', page !== 'swp');
+      pSeo.classList.toggle('hidden', page !== 'seo');
+
+      const activeCls = 'flex-1 lg:flex-initial px-3 py-1.5 rounded-lg bg-white text-brand-700 shadow-xs transition flex items-center justify-center gap-1.5';
+      const inactiveCls = 'flex-1 lg:flex-initial px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition flex items-center justify-center gap-1.5';
+
+      bSip.className = page === 'sip' ? activeCls : inactiveCls;
+      bSwp.className = page === 'swp' ? activeCls : inactiveCls;
+      bSeo.className = page === 'seo' ? activeCls : inactiveCls;
+
+      if (page === 'swp') recalculateSwp();
+    }
+
     function setupEventListeners() {
-      // Inputs & Sliders dual-binding
+      // Navigation tabs
+      document.getElementById('nav-sip-page').addEventListener('click', () => switchPage('sip'));
+      document.getElementById('nav-swp-page').addEventListener('click', () => switchPage('swp'));
+      document.getElementById('nav-seo-page').addEventListener('click', () => switchPage('seo'));
+
+      // Ad links
+      document.getElementById('link-ad-slot-1').addEventListener('click', (e) => {
+        e.preventDefault();
+        switchPage('seo');
+      });
+      document.getElementById('btn-ad-learn-more').addEventListener('click', () => {
+        switchPage('swp');
+      });
+
+      // Smooth Ad Preview toggle
+      document.getElementById('toggle-ad-preview').addEventListener('change', (e) => {
+        document.querySelectorAll('.smooth-ad-unit').forEach(el => {
+          el.classList.toggle('hidden', !e.target.checked);
+        });
+        showToast(e.target.checked ? 'Smooth Ad slots visible' : 'Ad slots hidden');
+      });
+
+      // 10Y SIP + 10Y Wait Quick Preset
+      document.getElementById('btn-preset-10-10').addEventListener('click', () => {
+        state.years = 10;
+        state.waitYears = 10;
+        syncInputsFromState();
+        recalculate();
+        showToast('Applied: 10-Year Active SIP + 10-Year Wait (20 Years Total)');
+      });
+
+      // Send SIP Corpus to SWP Calculator
+      const syncCorpusToSwp = () => {
+        const { schedule } = calculateSchedule();
+        const finalCorpus = schedule[schedule.length - 1].year_end_corpus;
+        const totalHorizon = state.years + state.waitYears;
+        state.swpCorpus = Math.round(finalCorpus);
+        state.swpDeferYears = totalHorizon;
+        syncInputsFromState();
+        switchPage('swp');
+        showToast(`Loaded ${formatCurrency(finalCorpus, true)} corpus after ${totalHorizon} years into SWP!`);
+      };
+      document.getElementById('btn-send-to-swp').addEventListener('click', syncCorpusToSwp);
+      document.getElementById('btn-sync-from-sip').addEventListener('click', syncCorpusToSwp);
+
+      // Dual bindings for SIP & SWP inputs
       const bindings = [
         { inputId: 'lumpsum-input', rangeId: 'lumpsum-range', stateKey: 'lumpsum', isFloat: false },
         { inputId: 'monthly-sip-input', rangeId: 'monthly-sip-range', stateKey: 'monthlySip', isFloat: false },
         { inputId: 'stepup-input', rangeId: 'stepup-range', stateKey: 'stepUpValue', isFloat: false },
         { inputId: 'return-rate-input', rangeId: 'return-rate-range', stateKey: 'returnRate', isFloat: true },
-        { inputId: 'years-input', rangeId: 'years-range', stateKey: 'years', isFloat: false }
+        { inputId: 'years-input', rangeId: 'years-range', stateKey: 'years', isFloat: false },
+        { inputId: 'wait-years-input', rangeId: 'wait-years-range', stateKey: 'waitYears', isFloat: false },
+        { inputId: 'swp-expense-input', rangeId: 'swp-expense-range', stateKey: 'swpCurrentExpense', isFloat: false },
+        { inputId: 'swp-inflation-input', rangeId: 'swp-inflation-range', stateKey: 'swpInflation', isFloat: true },
+        { inputId: 'swp-defer-years-input', rangeId: 'swp-defer-years-range', stateKey: 'swpDeferYears', isFloat: false },
+        { inputId: 'swp-corpus-input', rangeId: 'swp-corpus-range', stateKey: 'swpCorpus', isFloat: false },
+        { inputId: 'swp-return-input', rangeId: 'swp-return-range', stateKey: 'swpReturn', isFloat: true },
+        { inputId: 'swp-duration-input', rangeId: 'swp-duration-range', stateKey: 'swpDuration', isFloat: false }
       ];
 
       bindings.forEach(({ inputId, rangeId, stateKey, isFloat }) => {
         const input = document.getElementById(inputId);
         const range = document.getElementById(rangeId);
-
         const handler = (val) => {
           let num = isFloat ? parseFloat(val) : parseInt(val, 10);
           if (isNaN(num)) num = 0;
@@ -1047,26 +1789,21 @@
           range.value = num;
           recalculate();
         };
-
         input.addEventListener('input', (e) => handler(e.target.value));
         range.addEventListener('input', (e) => handler(e.target.value));
       });
 
-      // Preset chips delegation
       document.addEventListener('click', (e) => {
         const chip = e.target.closest('.preset-chip');
         if (chip) {
-          const targetId = chip.dataset.target;
-          const val = chip.dataset.value;
-          const input = document.getElementById(targetId);
+          const input = document.getElementById(chip.dataset.target);
           if (input) {
-            input.value = val;
+            input.value = chip.dataset.value;
             input.dispatchEvent(new Event('input'));
           }
         }
       });
 
-      // Step-up type buttons
       const btnPercent = document.getElementById('toggle-stepup-percent');
       const btnValue = document.getElementById('toggle-stepup-value');
       const stepupInput = document.getElementById('stepup-input');
@@ -1079,22 +1816,15 @@
         state.stepUpType = 'percent';
         btnPercent.className = 'px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition';
         btnValue.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-
         stepupLabel.textContent = 'Increment each year by (%):';
         stepupPrefix.classList.add('hidden');
         stepupSuffix.classList.remove('hidden');
-
-        stepupInput.min = '0';
-        stepupInput.max = '50';
-        stepupInput.step = '1';
-        stepupRange.min = '0';
+        stepupInput.max = '100';
         stepupRange.max = '50';
         stepupRange.step = '1';
-
         state.stepUpValue = 10;
         stepupInput.value = 10;
         stepupRange.value = 10;
-
         renderStepUpPresets();
         recalculate();
       });
@@ -1103,40 +1833,29 @@
         state.stepUpType = 'value';
         btnValue.className = 'px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition';
         btnPercent.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
-
         stepupLabel.textContent = `Increment each year by (${getCurrencySymbol()}):`;
         stepupPrefix.classList.remove('hidden');
         stepupSuffix.classList.add('hidden');
-
-        stepupInput.min = '0';
         stepupInput.max = '50000';
-        stepupInput.step = '500';
-        stepupRange.min = '0';
         stepupRange.max = '20000';
         stepupRange.step = '500';
-
         state.stepUpValue = 1000;
         stepupInput.value = 1000;
         stepupRange.value = 1000;
-
         renderStepUpPresets();
         recalculate();
       });
 
-      // Compounding method toggle
       const compoundToggle = document.getElementById('compound-stepup-toggle');
       const methodDesc = document.getElementById('stepup-method-desc');
       compoundToggle.addEventListener('change', (e) => {
         state.compoundStepUp = e.target.checked;
-        if (state.compoundStepUp) {
-          methodDesc.innerHTML = '<strong>Compounding Step-Up:</strong> Each year\'s SIP increases over the previous year\'s SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.';
-        } else {
-          methodDesc.innerHTML = '<strong>Simple Step-Up:</strong> Each year\'s SIP increases by a fixed percentage/amount calculated on the initial Year 1 base SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12k &rarr; ₹13k).';
-        }
+        methodDesc.innerHTML = state.compoundStepUp
+          ? '<strong>Compounding Step-Up:</strong> Each year\'s SIP increases over the previous year\'s SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.'
+          : '<strong>Simple Step-Up:</strong> Each year\'s SIP increases by a fixed percentage/amount calculated on the initial Year 1 base SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12k &rarr; ₹13k).';
         recalculate();
       });
 
-      // Currency selector
       document.getElementById('currency-select').addEventListener('change', (e) => {
         state.currency = e.target.value;
         renderStepUpPresets();
@@ -1144,7 +1863,6 @@
         showToast(`Currency switched to ${state.currency}`);
       });
 
-      // Share plan link button
       document.getElementById('btn-share-link').addEventListener('click', () => {
         try {
           const params = new URLSearchParams({
@@ -1154,29 +1872,13 @@
             stepup: state.stepUpValue,
             return: state.returnRate,
             years: state.years,
+            wait: state.waitYears,
             currency: state.currency,
-            compound: state.compoundStepUp
+            page: state.activePage
           });
           const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-          
-          if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(shareUrl).then(() => {
-              showToast('Shareable URL copied to clipboard!');
-            }).catch(() => {
-              fallbackCopy(shareUrl);
-            });
-          } else {
-            fallbackCopy(shareUrl);
-          }
-        } catch (err) {
-          showToast('Parameters ready to share!');
-        }
-      });
-
-      function fallbackCopy(text) {
-        try {
           const textArea = document.createElement('textarea');
-          textArea.value = text;
+          textArea.value = shareUrl;
           textArea.style.position = 'fixed';
           textArea.style.left = '-9999px';
           document.body.appendChild(textArea);
@@ -1186,11 +1888,10 @@
           document.body.removeChild(textArea);
           showToast('Shareable URL copied to clipboard!');
         } catch (e) {
-          showToast('URL updated in address bar');
+          showToast('Shareable link ready');
         }
-      }
+      });
 
-      // Reset button
       document.getElementById('btn-reset').addEventListener('click', () => {
         state.lumpsum = 100000;
         state.monthlySip = 10000;
@@ -1198,15 +1899,14 @@
         state.stepUpValue = 10;
         state.compoundStepUp = true;
         state.returnRate = 12.0;
-        state.years = 15;
+        state.years = 10;
+        state.waitYears = 10;
         state.currency = 'INR';
-
         syncInputsFromState();
         btnPercent.click();
         showToast('Calculator reset to default parameters');
       });
 
-      // Chart tabs
       const tabGrowth = document.getElementById('tab-growth-chart');
       const tabDoughnut = document.getElementById('tab-doughnut-chart');
       const containerGrowth = document.getElementById('container-growth-chart');
@@ -1226,21 +1926,19 @@
         containerDoughnut.classList.remove('hidden');
       });
 
-      // Table search
       document.getElementById('table-search').addEventListener('input', () => {
         const { schedule } = calculateSchedule();
         renderTable(schedule);
       });
 
-      // CSV export
       const handleCsvExport = () => {
         const { schedule } = calculateSchedule();
-        const headers = ['Year', 'Monthly_SIP', 'Yearly_SIP_Contribution', 'Cumulative_Invested', 'Yearly_Returns', 'Total_Gains', 'Year_End_Corpus'];
+        const headers = ['Year', 'Phase', 'Monthly_SIP', 'Yearly_SIP_Contribution', 'Cumulative_Invested', 'Yearly_Returns', 'Total_Gains', 'Year_End_Corpus'];
         const csvRows = [headers.join(',')];
-
         schedule.forEach(r => {
           csvRows.push([
             r.year,
+            r.phase,
             r.monthly_sip.toFixed(2),
             r.yearly_sip.toFixed(2),
             r.cumulative_invested.toFixed(2),
@@ -1249,12 +1947,11 @@
             r.year_end_corpus.toFixed(2)
           ].join(','));
         });
-
         const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `stepup_sip_schedule_${state.years}y.csv`;
+        a.download = `sip_stepup_schedule_${state.years}y_wait_${state.waitYears}y.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -1264,9 +1961,43 @@
 
       document.getElementById('btn-export-csv').addEventListener('click', handleCsvExport);
       document.getElementById('btn-export-csv-table').addEventListener('click', handleCsvExport);
+
+      // Legal Compliance Modals (Required for Google AdSense Approval)
+      const legalDocs = {
+        about: {
+          title: 'About Step-Up SIP & SWP Wealth Suite',
+          body: '<p>Step-Up SIP & SWP Wealth Suite is an open, client-side financial modeling platform designed to help investors calculate realistic long-term wealth creation and inflation-indexed retirement withdrawals.</p><p>All mathematical projections run 100% locally in your browser with zero server tracking of your financial inputs.</p>'
+        },
+        privacy: {
+          title: 'Privacy Policy (AdSense Compliant)',
+          body: '<p>We respect your privacy. All financial calculations entered into our Step-Up SIP and SWP calculators are processed locally in your browser and are never transmitted to or stored on any external database.</p><p><strong>Cookies & Third-Party Advertising:</strong> Third-party vendors, including Google AdSense, use cookies to serve ads based on a user\'s prior visits to this website or other websites. Users may opt out of personalized advertising by visiting Google Ads Settings.</p>'
+        },
+        terms: {
+          title: 'Terms of Use',
+          body: '<p>By using this website, you agree that all calculators and educational content are provided "as is" for informational and illustrative modeling purposes only.</p>'
+        },
+        disclaimer: {
+          title: 'Financial & Mutual Fund Disclaimer',
+          body: '<p><strong>Mutual Fund investments are subject to market risks. Read all scheme-related documents carefully before investing.</strong></p><p>The projections shown by the Step-Up SIP, Coast FIRE (SIP + Wait), and Inflation-Adjusted SWP calculators assume constant annual compounded returns and inflation rates. Actual market returns fluctuate and past performance does not guarantee future results. Please consult a SEBI-registered investment advisor (RIA) before making financial decisions.</p>'
+        }
+      };
+
+      const modal = document.getElementById('legal-modal');
+      document.querySelectorAll('.legal-link').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const doc = legalDocs[btn.dataset.doc];
+          if (doc) {
+            document.getElementById('legal-modal-title').textContent = doc.title;
+            document.getElementById('legal-modal-body').innerHTML = doc.body;
+            modal.classList.remove('hidden');
+          }
+        });
+      });
+      document.getElementById('btn-close-modal').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
     }
 
-    // In-page Toast notification
     function showToast(message) {
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
@@ -1278,18 +2009,13 @@
         <span>${message}</span>
       `;
       container.appendChild(toast);
-
-      requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-2', 'opacity-0');
-      });
-
+      requestAnimationFrame(() => { toast.classList.remove('translate-y-2', 'opacity-0'); });
       setTimeout(() => {
         toast.classList.add('opacity-0', '-translate-y-2');
         setTimeout(() => toast.remove(), 300);
       }, 2500);
     }
 
-    // Initialize application on page load
     window.addEventListener('DOMContentLoaded', () => {
       loadStateFromUrl();
       initCharts();
@@ -1300,6 +2026,7 @@
         renderStepUpPresets();
       }
       setupEventListeners();
+      if (state.activePage !== 'sip') switchPage(state.activePage);
       recalculate();
     });
   </script>
