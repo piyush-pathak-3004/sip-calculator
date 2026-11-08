@@ -1,0 +1,79 @@
+name: CI/CD Pipeline - Verify Compatibility & Deploy
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # -------------------------------------------------------------
+  # Job 1: Backward Compatibility & Regression Test Suite
+  # -------------------------------------------------------------
+  test-and-verify-compatibility:
+    name: Backward Compatibility & Regression Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Verify JavaScript Syntax & Linting
+        run: npm run lint
+
+      - name: Run Automated Backward-Compatibility Tests
+        run: npm test
+
+      - name: Test Build Artifact Generation
+        run: npm run build
+
+  # -------------------------------------------------------------
+  # Job 2: Automated Deployment to GitHub Pages
+  # -------------------------------------------------------------
+  deploy-to-pages:
+    name: Deploy to GitHub Pages
+    needs: test-and-verify-compatibility
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Production Website
+        run: npm run build
+
+      - name: Setup Pages Configuration
+        uses: actions/configure-pages@v5
+
+      - name: Upload Website Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

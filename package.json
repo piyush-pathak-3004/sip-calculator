@@ -1,0 +1,27 @@
+{
+  "name": "step-up-sip-calculator",
+  "version": "1.0.0",
+  "description": "Production-ready Step-Up SIP and Lumpsum Wealth Planner with automated backward-compatibility testing and GitHub Pages CI/CD deployment",
+  "main": "src/calculator.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:watch": "node --test --watch tests/*.test.js",
+    "lint": "node -c src/calculator.js tests/backward_compatibility.test.js",
+    "build": "mkdir -p dist && cp index.html dist/ && mkdir -p dist/src && cp src/calculator.js dist/src/",
+    "check": "npm run lint && npm run test"
+  },
+  "keywords": [
+    "sip",
+    "step-up-sip",
+    "mutual-funds",
+    "calculator",
+    "wealth-planning",
+    "finance",
+    "ci-cd"
+  ],
+  "author": "Open Source Contributor",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

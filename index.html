@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step-Up SIP & Lumpsum Calculator | Production Web App</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            },
+            accent: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .table-container { max-height: 480px; }
+    /* Smooth transition */
+    * { transition: background-color 0.15s ease, border-color 0.15s ease; }
+    input[type=range] { accent-color: #059669; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans min-h-screen flex flex-col">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-accent-600 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Step-Up SIP & Lumpsum Calculator</h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-brand-100 text-brand-800 border border-brand-200">Production Web App</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">Model lumpsum compounding, monthly SIP increments, and year-by-year expected corpus</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5">
+        <!-- Currency Selector -->
+        <div class="flex items-center bg-slate-100 rounded-lg p-0.5 border border-slate-200 text-xs font-medium">
+          <label for="currency-select" class="sr-only">Select Currency</label>
+          <select id="currency-select" class="bg-transparent py-1.5 px-2.5 text-slate-700 font-semibold focus:outline-none cursor-pointer">
+            <option value="INR" selected>₹ INR (Lakh/Cr)</option>
+            <option value="USD">$ USD ($/M)</option>
+            <option value="EUR">€ EUR (€/M)</option>
+            <option value="GBP">£ GBP (£/M)</option>
+          </select>
+        </div>
+
+        <!-- Copy Shareable Link Button -->
+        <button id="btn-share-link" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition">
+          <svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+          </svg>
+          Share Plan
+        </button>
+
+        <!-- Reset Button -->
+        <button id="btn-reset" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium shadow-sm transition">
+          <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Reset
+        </button>
+
+        <!-- Export CSV Button -->
+        <button id="btn-export-csv" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold shadow-sm shadow-brand-600/30 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Export CSV
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- Left Column: Interactive Inputs (5 Columns on Desktop) -->
+      <section class="lg:col-span-5 space-y-5 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+            </svg>
+            Investment Parameters
+          </h2>
+          <span class="text-xs text-slate-400 font-medium">Real-time update</span>
+        </div>
+
+        <!-- 1. Initial Lumpsum Amount -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label for="lumpsum-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+              Available Lumpsum
+              <span class="text-xs font-normal text-slate-400">(Day 1 investment)</span>
+            </label>
+            <div class="relative w-36">
+              <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+              <input type="number" id="lumpsum-input" min="0" max="100000000" step="5000" value="100000"
+                class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+            </div>
+          </div>
+          <input type="range" id="lumpsum-range" min="0" max="2500000" step="10000" value="100000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="0">₹0</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="50000">₹50K</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="100000">₹1 Lakh</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="500000">₹5 Lakhs</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="lumpsum-input" data-value="1000000">₹10 Lakhs</button>
+          </div>
+        </div>
+
+        <!-- 2. Initial Monthly SIP -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <div class="flex justify-between items-center">
+            <label for="monthly-sip-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+              Initial Monthly SIP
+              <span class="text-xs font-normal text-slate-400">(Year 1 monthly)</span>
+            </label>
+            <div class="relative w-36">
+              <span class="currency-symbol absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">₹</span>
+              <input type="number" id="monthly-sip-input" min="500" max="1000000" step="500" value="10000"
+                class="w-full pl-7 pr-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+            </div>
+          </div>
+          <input type="range" id="monthly-sip-range" min="500" max="100000" step="500" value="10000" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="2500">₹2.5K</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="5000">₹5K</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="10000">₹10K</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="25000">₹25K</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="monthly-sip-input" data-value="50000">₹50K</button>
+          </div>
+        </div>
+
+        <!-- 3. Annual Step-Up Configuration -->
+        <div class="space-y-3 pt-2 border-t border-slate-100">
+          <div class="flex items-center justify-between">
+            <label class="text-sm font-semibold text-slate-700">Annual Step-Up Frequency</label>
+            <!-- Step-Up Type Toggle -->
+            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+              <button type="button" id="toggle-stepup-percent" class="px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition">
+                Percentage (%)
+              </button>
+              <button type="button" id="toggle-stepup-value" class="px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
+                Fixed Value (<span class="currency-symbol">₹</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Step-up Value Input & Slider -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center">
+              <span id="stepup-label" class="text-xs text-slate-500 font-medium">Increment each year by (%):</span>
+              <div class="relative w-36">
+                <span id="stepup-unit-prefix" class="hidden absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs currency-symbol">₹</span>
+                <input type="number" id="stepup-input" min="0" max="100" step="1" value="10"
+                  class="w-full px-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+                <span id="stepup-unit-suffix" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+              </div>
+            </div>
+            <input type="range" id="stepup-range" min="0" max="50" step="1" value="10" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+            <div id="stepup-presets-container" class="flex flex-wrap gap-1.5 pt-1">
+              <!-- Dynamically populated presets -->
+            </div>
+          </div>
+
+          <!-- Compound vs Simple Step-Up Toggle -->
+          <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80 text-xs space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="font-medium text-slate-700">Step-Up Calculation Method:</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="compound-stepup-toggle" class="sr-only peer" checked>
+                <div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-600"></div>
+              </label>
+            </div>
+            <p id="stepup-method-desc" class="text-slate-500 text-[11px] leading-relaxed">
+              <strong>Compounding Step-Up:</strong> Each year's SIP increases over the previous year's SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.
+            </p>
+          </div>
+        </div>
+
+        <!-- 4. Expected Annual Return Rate -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <div class="flex justify-between items-center">
+            <label for="return-rate-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+              Expected Return Rate (p.a.)
+              <span class="text-xs font-normal text-slate-400">(CAGR)</span>
+            </label>
+            <div class="relative w-36">
+              <input type="number" id="return-rate-input" min="1" max="35" step="0.5" value="12"
+                class="w-full pr-7 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">%</span>
+            </div>
+          </div>
+          <input type="range" id="return-rate-range" min="1" max="25" step="0.5" value="12" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="8">Debt (8%)</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="10">Hybrid (10%)</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="12">Large Cap (12%)</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="return-rate-input" data-value="15">Mid/Small (15%)</button>
+          </div>
+        </div>
+
+        <!-- 5. Investment Duration in Years -->
+        <div class="space-y-2 pt-2 border-t border-slate-100">
+          <div class="flex justify-between items-center">
+            <label for="years-input" class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+              Investment Horizon
+              <span class="text-xs font-normal text-slate-400">(Time period)</span>
+            </label>
+            <div class="relative w-36">
+              <input type="number" id="years-input" min="1" max="40" step="1" value="15"
+                class="w-full pr-12 pl-2.5 py-1.5 text-right font-mono font-semibold text-sm rounded-lg border border-slate-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 bg-slate-50">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-xs">Yrs</span>
+            </div>
+          </div>
+          <input type="range" id="years-range" min="1" max="35" step="1" value="15" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          <div class="flex flex-wrap gap-1.5 pt-1">
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="5">5 Years</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="10">10 Years</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="15">15 Years</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="20">20 Years</button>
+            <button type="button" class="preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition" data-target="years-input" data-value="25">25 Years</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Results Dashboard, Charts & Breakdown (7 Columns on Desktop) -->
+      <section class="lg:col-span-7 space-y-6">
+
+        <!-- 4 Key Performance Metric Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Total Expected Corpus -->
+          <div class="bg-gradient-to-br from-brand-600 via-brand-700 to-emerald-900 rounded-2xl p-5 text-white shadow-lg shadow-brand-700/20 relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex items-center justify-between text-brand-100 text-xs font-semibold uppercase tracking-wider mb-1">
+              <span>Expected Maturity Corpus</span>
+              <span class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px]">Future Value</span>
+            </div>
+            <div id="metric-corpus" class="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono py-1">₹0</div>
+            <div class="flex items-center justify-between pt-2 border-t border-white/20 text-xs text-brand-100">
+              <span id="metric-corpus-words" class="font-medium text-white/90">Calculating...</span>
+              <span id="metric-multiplier" class="font-bold bg-white text-brand-900 px-2 py-0.5 rounded-md text-[11px]">0.0x Return</span>
+            </div>
+          </div>
+
+          <!-- Total Invested Amount -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <span>Total Amount Invested</span>
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <div id="metric-invested" class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono py-1">₹0</div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+              <span>Lumpsum: <strong id="metric-invested-lumpsum" class="text-slate-800">₹0</strong></span>
+              <span>Total SIPs: <strong id="metric-invested-sips" class="text-slate-800">₹0</strong></span>
+            </div>
+          </div>
+
+          <!-- Estimated Wealth Gain (Interest) -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <span>Estimated Wealth Gain</span>
+                <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                </svg>
+              </div>
+              <div id="metric-gain" class="text-2xl sm:text-3xl font-extrabold text-brand-600 tracking-tight font-mono py-1">₹0</div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+              <span>Gain Share: <strong id="metric-gain-percent" class="text-brand-600 font-bold">0%</strong></span>
+              <span>of Total Corpus</span>
+            </div>
+          </div>
+
+          <!-- Final Year Monthly SIP -->
+          <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between text-slate-400 text-xs font-semibold uppercase tracking-wider mb-1">
+                <span>Final Year Monthly SIP</span>
+                <svg class="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+              </div>
+              <div id="metric-final-sip" class="text-2xl sm:text-3xl font-extrabold text-accent-600 tracking-tight font-mono py-1">₹0</div>
+            </div>
+            <div class="pt-2 border-t border-slate-100 text-xs text-slate-500 flex justify-between items-center">
+              <span>Grown from: <strong id="metric-initial-sip" class="text-slate-800">₹10,000</strong></span>
+              <span id="metric-sip-growth-badge" class="text-accent-700 bg-accent-50 font-semibold px-2 py-0.5 rounded text-[11px]">+0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comparative Advantage Banner -->
+        <div id="comparison-banner" class="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-accent-50 to-indigo-50/50 border border-indigo-100 flex items-center justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-9 h-9 rounded-xl bg-accent-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-900">The Power of Step-Up Compounding</h3>
+              <p id="comparison-text" class="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                By stepping up your SIP, you will accumulate significantly more wealth compared to a fixed monthly SIP.
+              </p>
+            </div>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="text-[11px] text-slate-400 block font-medium uppercase">Extra Wealth</span>
+            <span id="comparison-extra-value" class="text-base sm:text-lg font-bold text-accent-700 font-mono">+₹0</span>
+          </div>
+        </div>
+
+        <!-- Visual Analytics: Charts Section -->
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div class="flex items-center gap-2">
+              <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+              </svg>
+              <h3 class="text-sm font-bold text-slate-900">Visual Growth Breakdown</h3>
+            </div>
+            <!-- Chart Toggle Tabs -->
+            <div class="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+              <button type="button" id="tab-growth-chart" class="px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition">
+                Growth Trajectory
+              </button>
+              <button type="button" id="tab-doughnut-chart" class="px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition">
+                Corpus Distribution
+              </button>
+            </div>
+          </div>
+
+          <!-- Growth Trajectory Chart Container -->
+          <div id="container-growth-chart" class="relative h-72 w-full">
+            <canvas id="growthChart"></canvas>
+          </div>
+
+          <!-- Doughnut Distribution Chart Container -->
+          <div id="container-doughnut-chart" class="hidden relative h-72 w-full flex items-center justify-center">
+            <div class="w-full max-w-xs h-full relative">
+              <canvas id="doughnutChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Chart Legend & Helper -->
+          <div class="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-slate-600 border-t border-slate-100">
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-sm bg-slate-400"></span>
+              <span>Cumulative Invested</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-sm bg-brand-500"></span>
+              <span>Expected Portfolio Corpus</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="w-3 h-3 rounded-sm bg-accent-500"></span>
+              <span>Wealth Gain (Returns)</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- Full Year-by-Year Schedule (Detailed Breakdown Table) -->
+    <section class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="p-5 sm:px-6 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-base font-bold text-slate-900">Year-by-Year SIP & Corpus Schedule</h2>
+            <span id="schedule-years-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-100 text-brand-800 border border-brand-200">15 Years</span>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5">Complete breakdown of active monthly SIP, annual investment, and compound growth for each individual year</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <!-- Table Search / Filter -->
+          <div class="relative w-44">
+            <input type="text" id="table-search" placeholder="Filter year..."
+              class="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:border-brand-500">
+            <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+
+          <!-- Secondary CSV Button -->
+          <button id="btn-export-csv-table" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-sm transition">
+            <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            Download CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Schedule Table -->
+      <div class="table-container overflow-x-auto">
+        <table class="w-full text-left text-xs whitespace-nowrap">
+          <thead class="bg-slate-100 text-slate-700 font-bold uppercase tracking-wider sticky top-0 border-b border-slate-200 z-10">
+            <tr>
+              <th scope="col" class="py-3 px-4">Year</th>
+              <th scope="col" class="py-3 px-4 text-right">Monthly SIP</th>
+              <th scope="col" class="py-3 px-4 text-right">Annual Contribution</th>
+              <th scope="col" class="py-3 px-4 text-right">Total Invested</th>
+              <th scope="col" class="py-3 px-4 text-right">Yearly Returns</th>
+              <th scope="col" class="py-3 px-4 text-right">Total Wealth Gain</th>
+              <th scope="col" class="py-3 px-4 text-right text-brand-900 bg-brand-50/70">Year-End Corpus</th>
+            </tr>
+          </thead>
+          <tbody id="schedule-table-body" class="divide-y divide-slate-100 font-mono">
+            <!-- Rows injected via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="p-3.5 bg-slate-50 border-t border-slate-200 text-slate-500 text-[11px] flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <span>Compounded monthly at nominal rate divided by 12. Monthly investments modeled at start of installment period.</span>
+        </div>
+        <span id="table-row-count" class="font-medium">Showing 15 of 15 years</span>
+      </div>
+    </section>
+
+    <!-- Financial Milestone Badges & Insights -->
+    <section class="mt-8 bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+          </svg>
+          Corpus Milestone Timeline
+        </h3>
+        <span class="text-xs text-slate-400">Time to reach target wealth thresholds</span>
+      </div>
+
+      <div id="milestones-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+        <!-- Milestone Cards injected by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-slate-500 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <p class="font-medium text-slate-700">Step-Up SIP & Lumpsum Wealth Planner</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Built for mutual funds, index funds, and equity systematic investing.</p>
+      </div>
+      <div class="text-[11px] text-slate-400 text-right">
+        <span>Mutual fund investments are subject to market risks. Model is for educational and illustrative purposes.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script Logic -->
+  <script>
+    // State management with URL state persistence and backward-compatible fallbacks
+    const state = {
+      lumpsum: 100000,
+      monthlySip: 10000,
+      stepUpType: 'percent', // 'percent' or 'value'
+      stepUpValue: 10,
+      compoundStepUp: true,
+      returnRate: 12.0,
+      years: 15,
+      currency: 'INR',
+      chartType: 'trajectory' // 'trajectory' or 'doughnut'
+    };
+
+    // Parse URL query parameters to support backward-compatible shared links
+    function loadStateFromUrl() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Backward-compatible query keys: 'lumpsum' or 'lump_sum'
+        if (params.has('lumpsum')) state.lumpsum = Math.max(0, parseFloat(params.get('lumpsum')) || 0);
+        else if (params.has('lump_sum')) state.lumpsum = Math.max(0, parseFloat(params.get('lump_sum')) || 0);
+
+        // 'sip' or 'monthlySip'
+        if (params.has('monthlySip')) state.monthlySip = Math.max(0, parseFloat(params.get('monthlySip')) || 0);
+        else if (params.has('sip')) state.monthlySip = Math.max(0, parseFloat(params.get('sip')) || 0);
+
+        // 'stepUpType' or 'step_up_type' or 'type'
+        if (params.has('stepUpType')) state.stepUpType = params.get('stepUpType') === 'value' ? 'value' : 'percent';
+        else if (params.has('step_up_type')) state.stepUpType = params.get('step_up_type') === 'value' ? 'value' : 'percent';
+        else if (params.has('type')) state.stepUpType = params.get('type') === 'value' ? 'value' : 'percent';
+
+        // 'stepUpValue' or 'step_up' or 'stepup'
+        if (params.has('stepUpValue')) state.stepUpValue = Math.max(0, parseFloat(params.get('stepUpValue')) || 0);
+        else if (params.has('step_up')) state.stepUpValue = Math.max(0, parseFloat(params.get('step_up')) || 0);
+        else if (params.has('stepup')) state.stepUpValue = Math.max(0, parseFloat(params.get('stepup')) || 0);
+
+        // 'returnRate' or 'rate' or 'return'
+        if (params.has('returnRate')) state.returnRate = Math.max(0, parseFloat(params.get('returnRate')) || 0);
+        else if (params.has('rate')) state.returnRate = Math.max(0, parseFloat(params.get('rate')) || 0);
+        else if (params.has('return')) state.returnRate = Math.max(0, parseFloat(params.get('return')) || 0);
+
+        // 'years' or 'tenure'
+        if (params.has('years')) state.years = Math.max(1, Math.min(50, parseInt(params.get('years'), 10) || 15));
+        else if (params.has('tenure')) state.years = Math.max(1, Math.min(50, parseInt(params.get('tenure'), 10) || 15));
+
+        // 'currency'
+        if (params.has('currency')) state.currency = params.get('currency');
+
+        // 'compound'
+        if (params.has('compound')) state.compoundStepUp = params.get('compound') !== 'false';
+      } catch (err) {
+        // Fallback gracefully on parsing errors
+      }
+    }
+
+    // Sync input fields with current state values
+    function syncInputsFromState() {
+      document.getElementById('lumpsum-input').value = state.lumpsum;
+      document.getElementById('lumpsum-range').value = state.lumpsum;
+      document.getElementById('monthly-sip-input').value = state.monthlySip;
+      document.getElementById('monthly-sip-range').value = state.monthlySip;
+      document.getElementById('stepup-input').value = state.stepUpValue;
+      document.getElementById('stepup-range').value = state.stepUpValue;
+      document.getElementById('return-rate-input').value = state.returnRate;
+      document.getElementById('return-rate-range').value = state.returnRate;
+      document.getElementById('years-input').value = state.years;
+      document.getElementById('years-range').value = state.years;
+      document.getElementById('currency-select').value = state.currency;
+      document.getElementById('compound-stepup-toggle').checked = state.compoundStepUp;
+    }
+
+    // Preset options
+    const presetsConfig = {
+      percent: [
+        { label: '5%', value: 5 },
+        { label: '10%', value: 10 },
+        { label: '15%', value: 15 },
+        { label: '20%', value: 20 },
+        { label: '25%', value: 25 }
+      ],
+      value: [
+        { label: '+500', value: 500 },
+        { label: '+1K', value: 1000 },
+        { label: '+2K', value: 2000 },
+        { label: '+5K', value: 5000 },
+        { label: '+10K', value: 10000 }
+      ]
+    };
+
+    // Currency formatting helpers
+    const currencySymbols = {
+      INR: '₹',
+      USD: '$',
+      EUR: '€',
+      GBP: '£'
+    };
+
+    function getCurrencySymbol() {
+      return currencySymbols[state.currency] || '₹';
+    }
+
+    function formatCurrency(amount, compact = false) {
+      const sym = getCurrencySymbol();
+      if (isNaN(amount)) return `${sym}0`;
+
+      if (state.currency === 'INR') {
+        if (compact) {
+          if (Math.abs(amount) >= 10000000) {
+            return `${sym}${(amount / 10000000).toFixed(2)} Cr`;
+          } else if (Math.abs(amount) >= 100000) {
+            return `${sym}${(amount / 100000).toFixed(2)} Lakh`;
+          } else if (Math.abs(amount) >= 1000) {
+            return `${sym}${(amount / 1000).toFixed(1)}K`;
+          }
+        }
+        return `${sym}${Number(amount.toFixed(0)).toLocaleString('en-IN')}`;
+      } else {
+        if (compact) {
+          if (Math.abs(amount) >= 1000000000) {
+            return `${sym}${(amount / 1000000000).toFixed(2)}B`;
+          } else if (Math.abs(amount) >= 1000000) {
+            return `${sym}${(amount / 1000000).toFixed(2)}M`;
+          } else if (Math.abs(amount) >= 1000) {
+            return `${sym}${(amount / 1000).toFixed(1)}K`;
+          }
+        }
+        return `${sym}${Number(amount.toFixed(0)).toLocaleString('en-US')}`;
+      }
+    }
+
+    function formatNumberWords(amount) {
+      if (isNaN(amount) || amount === 0) return 'Nil';
+      if (state.currency === 'INR') {
+        if (amount >= 10000000) {
+          const cr = (amount / 10000000).toFixed(2);
+          return `≈ ${cr} Crores`;
+        } else if (amount >= 100000) {
+          const lk = (amount / 100000).toFixed(2);
+          return `≈ ${lk} Lakhs`;
+        } else if (amount >= 1000) {
+          return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
+        }
+      } else {
+        if (amount >= 1000000000) {
+          return `≈ ${(amount / 1000000000).toFixed(2)} Billion`;
+        } else if (amount >= 1000000) {
+          return `≈ ${(amount / 1000000).toFixed(2)} Million`;
+        } else if (amount >= 1000) {
+          return `≈ ${(amount / 1000).toFixed(1)} Thousand`;
+        }
+      }
+      return '';
+    }
+
+    // Calculation core
+    function calculateSchedule() {
+      const r_monthly = (state.returnRate / 100) / 12;
+      const years = state.years;
+      const schedule = [];
+
+      let current_balance = state.lumpsum;
+      let total_invested = state.lumpsum;
+
+      for (let y = 1; y <= years; y++) {
+        let sip_this_year = state.monthlySip;
+
+        if (y > 1) {
+          if (state.stepUpType === 'percent') {
+            if (state.compoundStepUp) {
+              sip_this_year = schedule[y - 2].monthly_sip * (1 + state.stepUpValue / 100);
+            } else {
+              sip_this_year = state.monthlySip * (1 + (y - 1) * (state.stepUpValue / 100));
+            }
+          } else {
+            // Fixed amount
+            if (state.compoundStepUp) {
+              sip_this_year = schedule[y - 2].monthly_sip + state.stepUpValue;
+            } else {
+              sip_this_year = state.monthlySip + (y - 1) * state.stepUpValue;
+            }
+          }
+        }
+
+        const start_year_balance = current_balance;
+        const yearly_sip_invested = sip_this_year * 12;
+
+        // Month by month compounding (beginning of month deposit)
+        for (let m = 0; m < 12; m++) {
+          current_balance = (current_balance + sip_this_year) * (1 + r_monthly);
+        }
+
+        total_invested += yearly_sip_invested;
+        const year_returns = current_balance - start_year_balance - yearly_sip_invested;
+        const total_gains = current_balance - total_invested;
+
+        schedule.push({
+          year: y,
+          monthly_sip: sip_this_year,
+          yearly_sip: yearly_sip_invested,
+          cumulative_invested: total_invested,
+          year_returns: Math.max(0, year_returns),
+          year_end_corpus: current_balance,
+          total_gains: Math.max(0, total_gains)
+        });
+      }
+
+      // Flat SIP comparison (without stepup)
+      let flat_balance = state.lumpsum;
+      let flat_invested = state.lumpsum + (state.monthlySip * 12 * years);
+      for (let m = 0; m < years * 12; m++) {
+        flat_balance = (flat_balance + state.monthlySip) * (1 + r_monthly);
+      }
+
+      return {
+        schedule,
+        flatCorpus: flat_balance,
+        flatInvested: flat_invested
+      };
+    }
+
+    // Chart instances
+    let growthChartInstance = null;
+    let doughnutChartInstance = null;
+
+    function initCharts() {
+      // Growth Trajectory Chart
+      const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+      growthChartInstance = new Chart(ctxGrowth, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: 'Total Expected Corpus',
+              data: [],
+              borderColor: '#059669',
+              backgroundColor: 'rgba(16, 185, 129, 0.12)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2.5,
+              pointBackgroundColor: '#059669',
+              pointRadius: 3,
+              pointHoverRadius: 6
+            },
+            {
+              label: 'Total Invested',
+              data: [],
+              borderColor: '#64748b',
+              backgroundColor: 'rgba(148, 163, 184, 0.08)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 2,
+              borderDash: [5, 5],
+              pointBackgroundColor: '#64748b',
+              pointRadius: 2,
+              pointHoverRadius: 5
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.dataset.label}: ${formatCurrency(context.raw)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { family: '"JetBrains Mono"', size: 10 } }
+            },
+            y: {
+              grid: { color: '#f1f5f9' },
+              ticks: {
+                font: { family: '"JetBrains Mono"', size: 10 },
+                callback: function(value) {
+                  return formatCurrency(value, true);
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Doughnut Distribution Chart
+      const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+      doughnutChartInstance = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Lumpsum Invested', 'SIP Contributions', 'Wealth Gain (Returns)'],
+          datasets: [{
+            data: [1, 1, 1],
+            backgroundColor: ['#94a3b8', '#6366f1', '#10b981'],
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '72%',
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { family: '"Plus Jakarta Sans"', size: 11, weight: '600' },
+                boxWidth: 12,
+                padding: 14
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return ` ${context.label}: ${formatCurrency(context.raw)}`;
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCharts(schedule) {
+      if (!growthChartInstance || !doughnutChartInstance) return;
+
+      const labels = schedule.map(row => `Yr ${row.year}`);
+      const corpusData = schedule.map(row => row.year_end_corpus);
+      const investedData = schedule.map(row => row.cumulative_invested);
+
+      growthChartInstance.data.labels = labels;
+      growthChartInstance.data.datasets[0].data = corpusData;
+      growthChartInstance.data.datasets[1].data = investedData;
+      growthChartInstance.update();
+
+      const lastRow = schedule[schedule.length - 1];
+      const lumpsumAmount = state.lumpsum;
+      const totalSipContributed = lastRow.cumulative_invested - lumpsumAmount;
+      const totalGain = lastRow.total_gains;
+
+      doughnutChartInstance.data.datasets[0].data = [lumpsumAmount, totalSipContributed, totalGain];
+      doughnutChartInstance.update();
+    }
+
+    // Milestones definition
+    function updateMilestones(schedule) {
+      const container = document.getElementById('milestones-grid');
+      container.innerHTML = '';
+
+      let targets = [];
+      if (state.currency === 'INR') {
+        targets = [
+          { label: '₹10 Lakhs', value: 1000000 },
+          { label: '₹25 Lakhs', value: 2500000 },
+          { label: '₹50 Lakhs', value: 5000000 },
+          { label: '₹1 Crore', value: 10000000 },
+          { label: '₹2 Crores', value: 20000000 },
+          { label: '₹5 Crores', value: 50000000 }
+        ];
+      } else {
+        targets = [
+          { label: '$50,000', value: 50000 },
+          { label: '$100,000', value: 100000 },
+          { label: '$250,000', value: 250000 },
+          { label: '$500,000', value: 500000 },
+          { label: '$1 Million', value: 1000000 },
+          { label: '$2 Million', value: 2000000 }
+        ];
+      }
+
+      targets.forEach(target => {
+        let reachedYear = null;
+        for (const row of schedule) {
+          if (row.year_end_corpus >= target.value) {
+            reachedYear = row.year;
+            break;
+          }
+        }
+
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-xl border text-center ${
+          reachedYear 
+            ? 'bg-brand-50/60 border-brand-200 text-brand-900' 
+            : 'bg-slate-50 border-slate-200 text-slate-400'
+        }`;
+
+        card.innerHTML = `
+          <span class="block text-xs font-bold ${reachedYear ? 'text-brand-900' : 'text-slate-500'}">${target.label}</span>
+          <div class="mt-1 text-xs">
+            ${reachedYear 
+              ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-brand-600 text-white shadow-xs">Year ${reachedYear}</span>` 
+              : `<span class="text-[11px] font-medium text-slate-400">Beyond ${state.years}y</span>`}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Render schedule table
+    function renderTable(schedule) {
+      const tbody = document.getElementById('schedule-table-body');
+      tbody.innerHTML = '';
+
+      const query = document.getElementById('table-search').value.trim().toLowerCase();
+
+      let visibleCount = 0;
+      schedule.forEach((row, idx) => {
+        const matchesQuery = query === '' || 
+          `year ${row.year}`.includes(query) || 
+          `${row.year}`.includes(query);
+
+        if (!matchesQuery) return;
+        visibleCount++;
+
+        const tr = document.createElement('tr');
+        tr.className = idx % 2 === 0 ? 'bg-white hover:bg-slate-50/80 transition' : 'bg-slate-50/50 hover:bg-slate-100/60 transition';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-slate-900 flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px] font-sans font-bold">${row.year}</span>
+            <span>Year ${row.year}</span>
+          </td>
+          <td class="py-3 px-4 text-right font-semibold text-slate-800">${formatCurrency(row.monthly_sip)}</td>
+          <td class="py-3 px-4 text-right text-slate-600">${formatCurrency(row.yearly_sip)}</td>
+          <td class="py-3 px-4 text-right text-slate-700">${formatCurrency(row.cumulative_invested)}</td>
+          <td class="py-3 px-4 text-right text-brand-600 font-medium">+${formatCurrency(row.year_returns)}</td>
+          <td class="py-3 px-4 text-right text-emerald-700 font-semibold">+${formatCurrency(row.total_gains)}</td>
+          <td class="py-3 px-4 text-right font-bold text-brand-900 bg-brand-50/50">${formatCurrency(row.year_end_corpus)}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('table-row-count').textContent = `Showing ${visibleCount} of ${schedule.length} years`;
+      document.getElementById('schedule-years-badge').textContent = `${state.years} Years`;
+    }
+
+    // Main update routine
+    function recalculate() {
+      const { schedule, flatCorpus } = calculateSchedule();
+      const finalRow = schedule[schedule.length - 1];
+
+      // Update KPI cards
+      document.getElementById('metric-corpus').textContent = formatCurrency(finalRow.year_end_corpus);
+      document.getElementById('metric-corpus-words').textContent = formatNumberWords(finalRow.year_end_corpus);
+
+      const multiplier = (finalRow.year_end_corpus / finalRow.cumulative_invested).toFixed(2);
+      document.getElementById('metric-multiplier').textContent = `${multiplier}x Return`;
+
+      document.getElementById('metric-invested').textContent = formatCurrency(finalRow.cumulative_invested);
+      document.getElementById('metric-invested-lumpsum').textContent = formatCurrency(state.lumpsum);
+      document.getElementById('metric-invested-sips').textContent = formatCurrency(finalRow.cumulative_invested - state.lumpsum);
+
+      document.getElementById('metric-gain').textContent = formatCurrency(finalRow.total_gains);
+      const gainPercent = ((finalRow.total_gains / finalRow.year_end_corpus) * 100).toFixed(1);
+      document.getElementById('metric-gain-percent').textContent = `${gainPercent}%`;
+
+      document.getElementById('metric-final-sip').textContent = `${formatCurrency(finalRow.monthly_sip)}/mo`;
+      document.getElementById('metric-initial-sip').textContent = `${formatCurrency(state.monthlySip)}/mo`;
+
+      const sipGrowthRate = (((finalRow.monthly_sip - state.monthlySip) / state.monthlySip) * 100).toFixed(0);
+      document.getElementById('metric-sip-growth-badge').textContent = `+${sipGrowthRate}%`;
+
+      // Comparison Banner
+      const extraWealth = finalRow.year_end_corpus - flatCorpus;
+      document.getElementById('comparison-extra-value').textContent = `+${formatCurrency(extraWealth, true)}`;
+      document.getElementById('comparison-text').innerHTML = `
+        A regular flat SIP without step-up would yield <strong>${formatCurrency(flatCorpus, true)}</strong>. 
+        Your <strong>${state.stepUpValue}${state.stepUpType === 'percent' ? '%' : ' ' + getCurrencySymbol()}</strong> annual step-up generates an extra 
+        <strong class="text-accent-700">${formatCurrency(extraWealth, true)}</strong> in wealth!
+      `;
+
+      // Update currency symbols across page
+      document.querySelectorAll('.currency-symbol').forEach(el => {
+        el.textContent = getCurrencySymbol();
+      });
+
+      // Update charts & tables
+      updateCharts(schedule);
+      renderTable(schedule);
+      updateMilestones(schedule);
+    }
+
+    // Step-up presets builder
+    function renderStepUpPresets() {
+      const container = document.getElementById('stepup-presets-container');
+      container.innerHTML = '';
+      const list = presetsConfig[state.stepUpType];
+
+      list.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'preset-chip text-[11px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition';
+        btn.textContent = state.stepUpType === 'value' ? `+${getCurrencySymbol()}${item.label.replace('+', '')}` : item.label;
+        btn.dataset.target = 'stepup-input';
+        btn.dataset.value = item.value;
+        container.appendChild(btn);
+      });
+    }
+
+    // Setup Event Listeners
+    function setupEventListeners() {
+      // Inputs & Sliders dual-binding
+      const bindings = [
+        { inputId: 'lumpsum-input', rangeId: 'lumpsum-range', stateKey: 'lumpsum', isFloat: false },
+        { inputId: 'monthly-sip-input', rangeId: 'monthly-sip-range', stateKey: 'monthlySip', isFloat: false },
+        { inputId: 'stepup-input', rangeId: 'stepup-range', stateKey: 'stepUpValue', isFloat: false },
+        { inputId: 'return-rate-input', rangeId: 'return-rate-range', stateKey: 'returnRate', isFloat: true },
+        { inputId: 'years-input', rangeId: 'years-range', stateKey: 'years', isFloat: false }
+      ];
+
+      bindings.forEach(({ inputId, rangeId, stateKey, isFloat }) => {
+        const input = document.getElementById(inputId);
+        const range = document.getElementById(rangeId);
+
+        const handler = (val) => {
+          let num = isFloat ? parseFloat(val) : parseInt(val, 10);
+          if (isNaN(num)) num = 0;
+          state[stateKey] = num;
+          input.value = num;
+          range.value = num;
+          recalculate();
+        };
+
+        input.addEventListener('input', (e) => handler(e.target.value));
+        range.addEventListener('input', (e) => handler(e.target.value));
+      });
+
+      // Preset chips delegation
+      document.addEventListener('click', (e) => {
+        const chip = e.target.closest('.preset-chip');
+        if (chip) {
+          const targetId = chip.dataset.target;
+          const val = chip.dataset.value;
+          const input = document.getElementById(targetId);
+          if (input) {
+            input.value = val;
+            input.dispatchEvent(new Event('input'));
+          }
+        }
+      });
+
+      // Step-up type buttons
+      const btnPercent = document.getElementById('toggle-stepup-percent');
+      const btnValue = document.getElementById('toggle-stepup-value');
+      const stepupInput = document.getElementById('stepup-input');
+      const stepupRange = document.getElementById('stepup-range');
+      const stepupPrefix = document.getElementById('stepup-unit-prefix');
+      const stepupSuffix = document.getElementById('stepup-unit-suffix');
+      const stepupLabel = document.getElementById('stepup-label');
+
+      btnPercent.addEventListener('click', () => {
+        state.stepUpType = 'percent';
+        btnPercent.className = 'px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition';
+        btnValue.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+
+        stepupLabel.textContent = 'Increment each year by (%):';
+        stepupPrefix.classList.add('hidden');
+        stepupSuffix.classList.remove('hidden');
+
+        stepupInput.min = '0';
+        stepupInput.max = '50';
+        stepupInput.step = '1';
+        stepupRange.min = '0';
+        stepupRange.max = '50';
+        stepupRange.step = '1';
+
+        state.stepUpValue = 10;
+        stepupInput.value = 10;
+        stepupRange.value = 10;
+
+        renderStepUpPresets();
+        recalculate();
+      });
+
+      btnValue.addEventListener('click', () => {
+        state.stepUpType = 'value';
+        btnValue.className = 'px-2.5 py-1 rounded-md bg-white text-brand-700 shadow-sm transition';
+        btnPercent.className = 'px-2.5 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+
+        stepupLabel.textContent = `Increment each year by (${getCurrencySymbol()}):`;
+        stepupPrefix.classList.remove('hidden');
+        stepupSuffix.classList.add('hidden');
+
+        stepupInput.min = '0';
+        stepupInput.max = '50000';
+        stepupInput.step = '500';
+        stepupRange.min = '0';
+        stepupRange.max = '20000';
+        stepupRange.step = '500';
+
+        state.stepUpValue = 1000;
+        stepupInput.value = 1000;
+        stepupRange.value = 1000;
+
+        renderStepUpPresets();
+        recalculate();
+      });
+
+      // Compounding method toggle
+      const compoundToggle = document.getElementById('compound-stepup-toggle');
+      const methodDesc = document.getElementById('stepup-method-desc');
+      compoundToggle.addEventListener('change', (e) => {
+        state.compoundStepUp = e.target.checked;
+        if (state.compoundStepUp) {
+          methodDesc.innerHTML = '<strong>Compounding Step-Up:</strong> Each year\'s SIP increases over the previous year\'s SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12.1k &rarr; ₹13.3k). Standard in mutual funds.';
+        } else {
+          methodDesc.innerHTML = '<strong>Simple Step-Up:</strong> Each year\'s SIP increases by a fixed percentage/amount calculated on the initial Year 1 base SIP (e.g. ₹10k &rarr; ₹11k &rarr; ₹12k &rarr; ₹13k).';
+        }
+        recalculate();
+      });
+
+      // Currency selector
+      document.getElementById('currency-select').addEventListener('change', (e) => {
+        state.currency = e.target.value;
+        renderStepUpPresets();
+        recalculate();
+        showToast(`Currency switched to ${state.currency}`);
+      });
+
+      // Share plan link button
+      document.getElementById('btn-share-link').addEventListener('click', () => {
+        try {
+          const params = new URLSearchParams({
+            lumpsum: state.lumpsum,
+            sip: state.monthlySip,
+            type: state.stepUpType,
+            stepup: state.stepUpValue,
+            return: state.returnRate,
+            years: state.years,
+            currency: state.currency,
+            compound: state.compoundStepUp
+          });
+          const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+          
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+              showToast('Shareable URL copied to clipboard!');
+            }).catch(() => {
+              fallbackCopy(shareUrl);
+            });
+          } else {
+            fallbackCopy(shareUrl);
+          }
+        } catch (err) {
+          showToast('Parameters ready to share!');
+        }
+      });
+
+      function fallbackCopy(text) {
+        try {
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showToast('Shareable URL copied to clipboard!');
+        } catch (e) {
+          showToast('URL updated in address bar');
+        }
+      }
+
+      // Reset button
+      document.getElementById('btn-reset').addEventListener('click', () => {
+        state.lumpsum = 100000;
+        state.monthlySip = 10000;
+        state.stepUpType = 'percent';
+        state.stepUpValue = 10;
+        state.compoundStepUp = true;
+        state.returnRate = 12.0;
+        state.years = 15;
+        state.currency = 'INR';
+
+        syncInputsFromState();
+        btnPercent.click();
+        showToast('Calculator reset to default parameters');
+      });
+
+      // Chart tabs
+      const tabGrowth = document.getElementById('tab-growth-chart');
+      const tabDoughnut = document.getElementById('tab-doughnut-chart');
+      const containerGrowth = document.getElementById('container-growth-chart');
+      const containerDoughnut = document.getElementById('container-doughnut-chart');
+
+      tabGrowth.addEventListener('click', () => {
+        tabGrowth.className = 'px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
+        tabDoughnut.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+        containerGrowth.classList.remove('hidden');
+        containerDoughnut.classList.add('hidden');
+      });
+
+      tabDoughnut.addEventListener('click', () => {
+        tabDoughnut.className = 'px-3 py-1 rounded-md bg-white text-slate-900 shadow-sm transition';
+        tabGrowth.className = 'px-3 py-1 rounded-md text-slate-600 hover:text-slate-900 transition';
+        containerGrowth.classList.add('hidden');
+        containerDoughnut.classList.remove('hidden');
+      });
+
+      // Table search
+      document.getElementById('table-search').addEventListener('input', () => {
+        const { schedule } = calculateSchedule();
+        renderTable(schedule);
+      });
+
+      // CSV export
+      const handleCsvExport = () => {
+        const { schedule } = calculateSchedule();
+        const headers = ['Year', 'Monthly_SIP', 'Yearly_SIP_Contribution', 'Cumulative_Invested', 'Yearly_Returns', 'Total_Gains', 'Year_End_Corpus'];
+        const csvRows = [headers.join(',')];
+
+        schedule.forEach(r => {
+          csvRows.push([
+            r.year,
+            r.monthly_sip.toFixed(2),
+            r.yearly_sip.toFixed(2),
+            r.cumulative_invested.toFixed(2),
+            r.year_returns.toFixed(2),
+            r.total_gains.toFixed(2),
+            r.year_end_corpus.toFixed(2)
+          ].join(','));
+        });
+
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `stepup_sip_schedule_${state.years}y.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Schedule exported to CSV');
+      };
+
+      document.getElementById('btn-export-csv').addEventListener('click', handleCsvExport);
+      document.getElementById('btn-export-csv-table').addEventListener('click', handleCsvExport);
+    }
+
+    // In-page Toast notification
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0';
+      toast.innerHTML = `
+        <svg class="w-4 h-4 text-brand-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        <span>${message}</span>
+      `;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    // Initialize application on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadStateFromUrl();
+      initCharts();
+      syncInputsFromState();
+      if (state.stepUpType === 'value') {
+        document.getElementById('toggle-stepup-value').click();
+      } else {
+        renderStepUpPresets();
+      }
+      setupEventListeners();
+      recalculate();
+    });
+  </script>
+</body>
+</html>
